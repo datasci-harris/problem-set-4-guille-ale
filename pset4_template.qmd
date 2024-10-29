@@ -21,15 +21,226 @@ include-before-body:
 
 ## Style Points (10 pts)
 
+
 ## Submission Steps (10 pts)
+1. This problem set is a paired problem set.
+2. Play paper, scissors, rock to determine who goes first. Call that person Partner 1.
+• Partner 1 (name and cnet ID): Alejandra Silva - aosilva
+• Partner 2 (name and cnet ID):
+3. Partner 1 will accept the ps4 and then share the link it creates with their partner.
+You can only share it with one partner so you will not be able to change it after your
+partner has accepted.
+4. “This submission is our work alone and complies with the 30538 integrity policy.” Add
+your initials to indicate your agreement: **__** **__**
+5. “I have uploaded the names of anyone else other than my partner and I worked with
+on the problem set here” (1 point)
+6. Late coins used this pset: **__** Late coins left after submission: **__**
+7. Knit your ps4.qmd to an PDF file to make ps4.pdf,
+• The PDF should not be more than 25 pages. Use head() and re-size figures when
+appropriate.
+8. (Partner 1): push ps4.qmd and ps4.pdf to your github repo.
+9. (Partner 1): submit ps4.pdf via Gradescope. Add your partner on Gradescope.
+10. (Partner 1): tag your submission in Gradescope
+
 
 ## Download and explore the Provider of Services (POS) file (10 pts)
 
 1. 
+
+```{python}
+
+import requests
+import pandas as pd
+import altair as alt
+
+base_url = "https://data.cms.gov/data-api/v1/dataset/{uuid}/data"
+uuid = "96ba2257-2080-49c1-9e5b-7726f9f83cad"
+
+columns = [
+    "PRVDR_CTGRY_CD",        # Provider Category Code
+    "PRVDR_CTGRY_SBTYP_CD",  # Provider Subtype Code
+    "CCN",                   # CMS Certification Number
+    "PGM_TRMNTN_CD",         # Termination Code
+    "FAC_NAME",              # Facility Name
+    "ZIP_CD",                # ZIP Code
+    "STATE_CD"               # State Abbreviation
+]
+
+columns_param = ",".join(columns)
+
+offset = 0
+limit = 5000  #  API allows size to be set to 5000
+
+all_data = []
+
+while True:
+    params = {
+
+        "column": columns_param,
+        "size": limit,
+        "offset": offset
+    }
+
+    url = base_url.format(uuid=uuid)
+    response = requests.get(url, params=params)
+
+    if response.status_code != 200:
+        print(f"Error: {response.status_code}, {response.text}")
+        break
+
+    data = response.json()
+
+    if not data:
+        print("No more data available.")
+        break
+
+    all_data.extend(data)
+
+    offset += limit
+    print(f"Fetched {len(data)} rows, moving to next batch...")
+
+df = pd.DataFrame(all_data)
+
+
+df.to_csv("pos2016.csv", index=False)
+
+
+
+```
+
 2. 
-    a.
-    b.
+```{python}
+
+df = pd.read_csv("pos2016.csv")
+
+
+df_st_hospitals = df[
+    (df["PRVDR_CTGRY_CD"] == 1) & 
+    (df["PRVDR_CTGRY_SBTYP_CD"] == 1)
+]
+
+num_hospitals = df_st_hospitals.shape[0]
+print(f"Number of short-term hospitals reported in the data: {num_hospitals}")
+
+print(df_st_hospitals)
+
+```
+
+The number of short-term hospitals reported in the dataset for Q4 2016 is 7,245.
+
+According to the American Hospital Association (AHA) Annual Survey, the estimated number of short-term hospitals is 4,500–5,000. Similarly, the CMS Hospital Compare dataset indicates around 4,800 hospitals.
+
+The discrepancy could be due to the narrower definition used in our dataset and the timing of data collection, which only includes hospitals in Q4 2016. Additionally, the CMS dataset might not include hospitals that do not participate in Medicare or Medicaid, which could lead to lower numbers.
+
 3. 
+
+```{python}
+
+uuid_dict = {
+    "2016Q4": "96ba2257-2080-49c1-9e5b-7726f9f83cad",
+    "2017Q4": "d338dc0d-641c-486a-b586-88a662f36963",
+    "2018Q4": "4ff7fcfb-2a40-4f76-875d-a4ac2aec268e",
+    "2019Q4": "03cca0cc-13a0-4b8d-82c4-57185b6bbfbd"
+}
+
+columns = [
+    "PRVDR_CTGRY_CD",        # Provider Category Code
+    "PRVDR_CTGRY_SBTYP_CD",  # Provider Subtype Code
+    "CCN",                   # CMS Certification Number
+    "PGM_TRMNTN_CD",         # Termination Code
+    "FAC_NAME",              # Facility Name
+    "ZIP_CD",                # ZIP Code
+    "STATE_CD"               # State Abbreviation
+]
+
+columns_param = ",".join(columns)
+
+combined_data = []
+
+for year_quarter, uuid in uuid_dict.items():
+    offset = 0
+    limit = 5000  
+    all_data = []
+
+    print(f"Fetching data for {year_quarter}...")
+
+    while True:
+        params = {
+            "column": columns_param,
+            "size": limit,
+            "offset": offset
+        }
+
+        url = f"https://data.cms.gov/data-api/v1/dataset/{uuid}/data"
+        response = requests.get(url, params=params)
+
+        if response.status_code != 200:
+            print(f"Error: {response.status_code}, {response.text}")
+            break
+
+        data = response.json()
+
+        if not data:
+            print("No more data available.")
+            break
+
+        all_data.extend(data)
+
+        offset += limit
+        print(f"Fetched {len(data)} rows for {year_quarter}, moving to next batch...")
+
+    year_data = pd.DataFrame(all_data)
+    year_data["Year"] = year_quarter[:4]  
+
+    combined_data.append(year_data)
+
+combined_df = pd.concat(combined_data, axis=0)
+
+combined_df.to_csv("combined_data.csv", index=False)
+
+print(f"Total records retrieved across all years: {combined_df.shape[0]}")
+```
+
+```{python}
+# Plotting Number of Observations Per Year
+
+combined_year_df = combined_df.groupby("Year").size().reset_index(name="Number of Observations")
+
+obs_chart = alt.Chart(combined_year_df).mark_bar().encode(
+    x=alt.X("Year:O", title="Year"),  
+    y=alt.Y("Number of Observations:Q", title="Number of Observations"),
+    tooltip=["Year", "Number of Observations"]
+).properties(
+    title="Number of Observations Per Year"
+)
+
+obs_chart.display()
+
+
+# Plotting Number of Unique Hospitals Per Year
+unique_hospitals = combined_df.groupby("Year")["CCN"].nunique().reset_index(name="Number of Unique Hospitals")
+
+unique_hospitals_chart = alt.Chart(unique_hospitals).mark_bar().encode(
+    x=alt.X("Year:O", title="Year"), 
+    y=alt.Y("Number of Unique Hospitals:Q", title="Number of Unique Hospitals"),
+    tooltip=["Year", "Number of Unique Hospitals"]
+).properties(
+    title="Number of Unique Hospitals Per Year"
+)
+
+unique_hospitals_chart.display()
+
+
+print("Observations Per Year:")
+print(observations_per_year)
+print("\nUnique Hospitals Per Year:")
+print(unique_hospitals_per_year)
+
+# Compare the two plots to understand the structure of the data.
+# Observations per year may be higher due to multiple records for the same hospital.
+# Unique hospitals per year give an idea of how many distinct hospitals are in the dataset for each year.
+
+```
 4. 
     a.
     b.

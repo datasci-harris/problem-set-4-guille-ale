@@ -1,0 +1,14 @@
+# Ignore data files
+*.csv
+*.dsv
+*.json
+
+# Ignore shapefiles and related extensions
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+
+# Ignore any raw data folder or data processing files
+/data/
