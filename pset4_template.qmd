@@ -59,7 +59,7 @@ uuid = "96ba2257-2080-49c1-9e5b-7726f9f83cad"
 columns = [
     "PRVDR_CTGRY_CD",        # Provider Category Code
     "PRVDR_CTGRY_SBTYP_CD",  # Provider Subtype Code
-    "CCN",                   # CMS Certification Number
+    "PRVDR_NUM",             # CMS Certification Number
     "PGM_TRMNTN_CD",         # Termination Code
     "FAC_NAME",              # Facility Name
     "ZIP_CD",                # ZIP Code
@@ -146,7 +146,7 @@ uuid_dict = {
 columns = [
     "PRVDR_CTGRY_CD",        # Provider Category Code
     "PRVDR_CTGRY_SBTYP_CD",  # Provider Subtype Code
-    "CCN",                   # CMS Certification Number
+    "PRVDR_NUM",             # CMS Certification Number
     "PGM_TRMNTN_CD",         # Termination Code
     "FAC_NAME",              # Facility Name
     "ZIP_CD",                # ZIP Code
@@ -190,7 +190,13 @@ for year_quarter, uuid in uuid_dict.items():
         print(f"Fetched {len(data)} rows for {year_quarter}, moving to next batch...")
 
     year_data = pd.DataFrame(all_data)
-    year_data["Year"] = year_quarter[:4]  
+    year_data["Year"] = year_quarter[:4]
+
+    # filtro por las condiciones
+    year_data = year_data[
+    (year_data["PRVDR_CTGRY_CD"] == "01") & 
+    (year_data["PRVDR_CTGRY_SBTYP_CD"] == "01")
+]  
 
     combined_data.append(year_data)
 
@@ -202,6 +208,8 @@ print(f"Total records retrieved across all years: {combined_df.shape[0]}")
 ```
 
 ```{python}
+import altair as alt
+
 # Plotting Number of Observations Per Year
 
 combined_year_df = combined_df.groupby("Year").size().reset_index(name="Number of Observations")
@@ -218,7 +226,7 @@ obs_chart.display()
 
 
 # Plotting Number of Unique Hospitals Per Year
-unique_hospitals = combined_df.groupby("Year")["CCN"].nunique().reset_index(name="Number of Unique Hospitals")
+unique_hospitals = combined_df.groupby("Year")["PRVDR_NUM"].nunique().reset_index(name="Number of Unique Hospitals")
 
 unique_hospitals_chart = alt.Chart(unique_hospitals).mark_bar().encode(
     x=alt.X("Year:O", title="Year"), 
