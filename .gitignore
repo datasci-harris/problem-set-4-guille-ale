@@ -14,3 +14,19 @@
 # Ignore other large or sensitive files
 *.csv 
 
+*/
+
+# Ignore data files and shapefiles at any level
+**/*.shp
+**/*.shx
+**/*.dbf
+**/*.prj
+**/*.cpg
+**/*.qix
+**/*.sbn
+**/*.sbx
+**/*.geojson
+**/*.json
+
+# Ignore other large or sensitive files at any level
+**/*.csv

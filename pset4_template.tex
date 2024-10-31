@@ -223,7 +223,7 @@
 \item
   Play paper, scissors, rock to determine who goes first. Call that
   person Partner 1. • Partner 1 (name and cnet ID): Alejandra Silva -
-  aosilva • Partner 2 (name and cnet ID):
+  aosilva • Partner 2 (name and cnet ID): Guillermina Marto - gmarto
 \item
   Partner 1 will accept the ps4 and then share the link it creates with
   their partner. You can only share it with one partner so you will not
@@ -231,7 +231,7 @@
 \item
   ``This submission is our work alone and complies with the 30538
   integrity policy.'' Add your initials to indicate your agreement:
-  **\_\_** **\_\_**
+  **\_\_** \textbf{GM}
 \item
   ``I have uploaded the names of anyone else other than my partner and I
   worked with on the problem set here'' (1 point)
@@ -264,6 +264,7 @@ pts)}\label{download-and-explore-the-provider-of-services-pos-file-10-pts}
 \begin{Highlighting}[]
 \ImportTok{import}\NormalTok{ requests}
 \ImportTok{import}\NormalTok{ pandas }\ImportTok{as}\NormalTok{ pd}
+\ImportTok{import}\NormalTok{ altair }\ImportTok{as}\NormalTok{ alt}
 
 \NormalTok{base\_url }\OperatorTok{=} \StringTok{"https://data.cms.gov/data{-}api/v1/dataset/}\SpecialCharTok{\{uuid\}}\StringTok{/data"}
 \NormalTok{uuid }\OperatorTok{=} \StringTok{"96ba2257{-}2080{-}49c1{-}9e5b{-}7726f9f83cad"}
@@ -271,7 +272,7 @@ pts)}\label{download-and-explore-the-provider-of-services-pos-file-10-pts}
 \NormalTok{columns }\OperatorTok{=}\NormalTok{ [}
     \StringTok{"PRVDR\_CTGRY\_CD"}\NormalTok{,        }\CommentTok{\# Provider Category Code}
     \StringTok{"PRVDR\_CTGRY\_SBTYP\_CD"}\NormalTok{,  }\CommentTok{\# Provider Subtype Code}
-    \StringTok{"CCN"}\NormalTok{,                   }\CommentTok{\# CMS Certification Number}
+    \StringTok{"PRVDR\_NUM"}\NormalTok{,             }\CommentTok{\# CMS Certification Number}
     \StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{,         }\CommentTok{\# Termination Code}
     \StringTok{"FAC\_NAME"}\NormalTok{,              }\CommentTok{\# Facility Name}
     \StringTok{"ZIP\_CD"}\NormalTok{,                }\CommentTok{\# ZIP Code}
@@ -281,14 +282,15 @@ pts)}\label{download-and-explore-the-provider-of-services-pos-file-10-pts}
 \NormalTok{columns\_param }\OperatorTok{=} \StringTok{","}\NormalTok{.join(columns)}
 
 \NormalTok{offset }\OperatorTok{=} \DecValTok{0}
-\NormalTok{limit }\OperatorTok{=} \DecValTok{5000}  \CommentTok{\# Set the limit to the maximum allowed by the API (5000 records)}
+\NormalTok{limit }\OperatorTok{=} \DecValTok{5000}  \CommentTok{\#  API allows size to be set to 5000}
 
 \NormalTok{all\_data }\OperatorTok{=}\NormalTok{ []}
 
 \ControlFlowTok{while} \VariableTok{True}\NormalTok{:}
 \NormalTok{    params }\OperatorTok{=}\NormalTok{ \{}
+
         \StringTok{"column"}\NormalTok{: columns\_param,}
-        \StringTok{"size"}\NormalTok{: limit,  }\CommentTok{\# API allows size to be set to 5000}
+        \StringTok{"size"}\NormalTok{: limit,}
         \StringTok{"offset"}\NormalTok{: offset}
 \NormalTok{    \}}
 
@@ -376,18 +378,18 @@ No more data available.
 
 \begin{verbatim}
 Number of short-term hospitals reported in the data: 7245
-        PRVDR_CTGRY_CD  PRVDR_CTGRY_SBTYP_CD  PGM_TRMNTN_CD  \
-0                    1                   1.0              0   
-1                    1                   1.0              1   
-2                    1                   1.0              0   
-3                    1                   1.0              0   
-4                    1                   1.0              0   
-...                ...                   ...            ...   
-133526               1                   1.0              0   
-133527               1                   1.0              0   
-133528               1                   1.0              0   
-133529               1                   1.0              0   
-133530               1                   1.0              0   
+        PRVDR_CTGRY_CD  PRVDR_CTGRY_SBTYP_CD PRVDR_NUM  PGM_TRMNTN_CD  \
+0                    1                   1.0    010001              0   
+1                    1                   1.0    010004              1   
+2                    1                   1.0    010005              0   
+3                    1                   1.0    010006              0   
+4                    1                   1.0    010007              0   
+...                ...                   ...       ...            ...   
+133526               1                   1.0    670114              0   
+133527               1                   1.0    670115              0   
+133528               1                   1.0    670116              0   
+133529               1                   1.0    670117              0   
+133530               1                   1.0    670118              0   
 
                                 FAC_NAME   ZIP_CD STATE_CD  
 0       SOUTHEAST ALABAMA MEDICAL CENTER  36301.0       AL  
@@ -402,7 +404,7 @@ Number of short-term hospitals reported in the data: 7245
 133529  TEXAS GENERAL HOSPITAL- VZRMC LP  75140.0       TX  
 133530              FIRST TEXAS HOSPITAL  77070.0       TX  
 
-[7245 rows x 6 columns]
+[7245 rows x 7 columns]
 \end{verbatim}
 
 The number of short-term hospitals reported in the dataset for Q4 2016
@@ -425,118 +427,273 @@ lower numbers.
 \item
 \end{enumerate}
 
-uuid\_dict = \{ ``2016Q4'': ``96ba2257-2080-49c1-9e5b-7726f9f83cad''
-``2017Q4'': ``d338dc0d-641c-486a-b586-88a662f36963'', ``2018Q4'':
-``4ff7fcfb-2a40-4f76-875d-a4ac2aec268e'', ``2019Q4'':
-``03cca0cc-13a0-4b8d-82c4-57185b6bbfbd'' \}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{uuid\_dict }\OperatorTok{=}\NormalTok{ \{}
+    \StringTok{"2016Q4"}\NormalTok{: }\StringTok{"96ba2257{-}2080{-}49c1{-}9e5b{-}7726f9f83cad"}\NormalTok{,}
+    \StringTok{"2017Q4"}\NormalTok{: }\StringTok{"d338dc0d{-}641c{-}486a{-}b586{-}88a662f36963"}\NormalTok{,}
+    \StringTok{"2018Q4"}\NormalTok{: }\StringTok{"4ff7fcfb{-}2a40{-}4f76{-}875d{-}a4ac2aec268e"}\NormalTok{,}
+    \StringTok{"2019Q4"}\NormalTok{: }\StringTok{"03cca0cc{-}13a0{-}4b8d{-}82c4{-}57185b6bbfbd"}
+\NormalTok{\}}
 
-columns = {[} ``PRVDR\_CTGRY\_CD'', \# Provider Category Code
-``PRVDR\_CTGRY\_SBTYP\_CD'', \# Provider Subtype Code ``CCN'', \# CMS
-Certification Number ``PGM\_TRMNTN\_CD'', \# Termination Code
-``FAC\_NAME'', \# Facility Name ``ZIP\_CD'', \# ZIP Code ``STATE\_CD''
-\# State Abbreviation{]}
+\NormalTok{columns }\OperatorTok{=}\NormalTok{ [}
+    \StringTok{"PRVDR\_CTGRY\_CD"}\NormalTok{,        }\CommentTok{\# Provider Category Code}
+    \StringTok{"PRVDR\_CTGRY\_SBTYP\_CD"}\NormalTok{,  }\CommentTok{\# Provider Subtype Code}
+    \StringTok{"PRVDR\_NUM"}\NormalTok{,             }\CommentTok{\# CMS Certification Number}
+    \StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{,         }\CommentTok{\# Termination Code}
+    \StringTok{"FAC\_NAME"}\NormalTok{,              }\CommentTok{\# Facility Name}
+    \StringTok{"ZIP\_CD"}\NormalTok{,                }\CommentTok{\# ZIP Code}
+    \StringTok{"STATE\_CD"}               \CommentTok{\# State Abbreviation}
+\NormalTok{]}
 
-columns\_param = ``,''.join(columns)
+\NormalTok{columns\_param }\OperatorTok{=} \StringTok{","}\NormalTok{.join(columns)}
 
-combined\_data = {[}{]}
+\NormalTok{combined\_data }\OperatorTok{=}\NormalTok{ []}
 
-for year\_quarter, uuid in uuid\_dict.items(): offset = 0 limit = 5000
-\# Set the limit to the maximum allowed by the API (5000 records)
-all\_data = {[}{]}
+\ControlFlowTok{for}\NormalTok{ year\_quarter, uuid }\KeywordTok{in}\NormalTok{ uuid\_dict.items():}
+\NormalTok{    offset }\OperatorTok{=} \DecValTok{0}
+\NormalTok{    limit }\OperatorTok{=} \DecValTok{5000}  
+\NormalTok{    all\_data }\OperatorTok{=}\NormalTok{ []}
+
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Fetching data for }\SpecialCharTok{\{}\NormalTok{year\_quarter}\SpecialCharTok{\}}\SpecialStringTok{..."}\NormalTok{)}
+
+    \ControlFlowTok{while} \VariableTok{True}\NormalTok{:}
+\NormalTok{        params }\OperatorTok{=}\NormalTok{ \{}
+            \StringTok{"column"}\NormalTok{: columns\_param,}
+            \StringTok{"size"}\NormalTok{: limit,}
+            \StringTok{"offset"}\NormalTok{: offset}
+\NormalTok{        \}}
+
+\NormalTok{        url }\OperatorTok{=} \SpecialStringTok{f"https://data.cms.gov/data{-}api/v1/dataset/}\SpecialCharTok{\{}\NormalTok{uuid}\SpecialCharTok{\}}\SpecialStringTok{/data"}
+\NormalTok{        response }\OperatorTok{=}\NormalTok{ requests.get(url, params}\OperatorTok{=}\NormalTok{params)}
+
+        \ControlFlowTok{if}\NormalTok{ response.status\_code }\OperatorTok{!=} \DecValTok{200}\NormalTok{:}
+            \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Error: }\SpecialCharTok{\{}\NormalTok{response}\SpecialCharTok{.}\NormalTok{status\_code}\SpecialCharTok{\}}\SpecialStringTok{, }\SpecialCharTok{\{}\NormalTok{response}\SpecialCharTok{.}\NormalTok{text}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+            \ControlFlowTok{break}
+
+\NormalTok{        data }\OperatorTok{=}\NormalTok{ response.json()}
+
+        \ControlFlowTok{if} \KeywordTok{not}\NormalTok{ data:}
+            \BuiltInTok{print}\NormalTok{(}\StringTok{"No more data available."}\NormalTok{)}
+            \ControlFlowTok{break}
+
+\NormalTok{        all\_data.extend(data)}
+
+\NormalTok{        offset }\OperatorTok{+=}\NormalTok{ limit}
+        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Fetched }\SpecialCharTok{\{}\BuiltInTok{len}\NormalTok{(data)}\SpecialCharTok{\}}\SpecialStringTok{ rows for }\SpecialCharTok{\{}\NormalTok{year\_quarter}\SpecialCharTok{\}}\SpecialStringTok{, moving to next batch..."}\NormalTok{)}
+
+\NormalTok{    year\_data }\OperatorTok{=}\NormalTok{ pd.DataFrame(all\_data)}
+\NormalTok{    year\_data[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{=}\NormalTok{ year\_quarter[:}\DecValTok{4}\NormalTok{]}
+
+    \CommentTok{\# filtro por las condiciones}
+\NormalTok{    year\_data }\OperatorTok{=}\NormalTok{ year\_data[}
+\NormalTok{    (year\_data[}\StringTok{"PRVDR\_CTGRY\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"01"}\NormalTok{) }\OperatorTok{\&} 
+\NormalTok{    (year\_data[}\StringTok{"PRVDR\_CTGRY\_SBTYP\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"01"}\NormalTok{)}
+\NormalTok{]  }
+
+\NormalTok{    combined\_data.append(year\_data)}
+
+\NormalTok{combined\_df }\OperatorTok{=}\NormalTok{ pd.concat(combined\_data, axis}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{combined\_df.to\_csv(}\StringTok{"combined\_data.csv"}\NormalTok{, index}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
+
+\BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Total records retrieved across all years: }\SpecialCharTok{\{}\NormalTok{combined\_df}\SpecialCharTok{.}\NormalTok{shape[}\DecValTok{0}\NormalTok{]}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
-print(f"Fetching data for {year_quarter}...")
-
-while True:
-    params = {
-        "column": columns_param,
-        "size": limit,
-        "offset": offset
-    }
-
-    url = f"https://data.cms.gov/data-api/v1/dataset/{uuid}/data"
-    response = requests.get(url, params=params)
-
-    if response.status_code != 200:
-        print(f"Error: {response.status_code}, {response.text}")
-        break
-
-    data = response.json()
-
-    if not data:
-        print("No more data available.")
-        break
-
-    all_data.extend(data)
-
-    offset += limit
-    print(f"Fetched {len(data)} rows for {year_quarter}, moving to next batch...")
-
-year_data = pd.DataFrame(all_data)
-year_data["Year"] = year_quarter[:4]  # Extract year from 'year_quarter'
-
-combined_data.append(year_data)
+Fetching data for 2016Q4...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 5000 rows for 2016Q4, moving to next batch...
+Fetched 1557 rows for 2016Q4, moving to next batch...
+No more data available.
+Fetching data for 2017Q4...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 5000 rows for 2017Q4, moving to next batch...
+Fetched 4110 rows for 2017Q4, moving to next batch...
+No more data available.
+Fetching data for 2018Q4...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 5000 rows for 2018Q4, moving to next batch...
+Fetched 1696 rows for 2018Q4, moving to next batch...
+No more data available.
+Fetching data for 2019Q4...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 5000 rows for 2019Q4, moving to next batch...
+Fetched 4206 rows for 2019Q4, moving to next batch...
+No more data available.
+Total records retrieved across all years: 29085
 \end{verbatim}
 
-combined\_df = pd.concat(combined\_data, axis=0)
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ altair }\ImportTok{as}\NormalTok{ alt}
 
-combined\_df.to\_csv(``combined\_data\_2017\_2019.csv'', index=False)
+\CommentTok{\# Plotting Number of Observations Per Year}
 
-\section{Display information about the combined
-dataset}\label{display-information-about-the-combined-dataset}
+\NormalTok{combined\_year\_df }\OperatorTok{=}\NormalTok{ combined\_df.groupby(}\StringTok{"Year"}\NormalTok{).size().reset\_index(name}\OperatorTok{=}\StringTok{"Number of Observations"}\NormalTok{)}
 
-print(f''Total records retrieved across all years:
-\{combined\_df.shape{[}0{]}\}``)
+\NormalTok{obs\_chart }\OperatorTok{=}\NormalTok{ alt.Chart(combined\_year\_df).mark\_bar().encode(}
+\NormalTok{    x}\OperatorTok{=}\NormalTok{alt.X(}\StringTok{"Year:O"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Year"}\NormalTok{),  }
+\NormalTok{    y}\OperatorTok{=}\NormalTok{alt.Y(}\StringTok{"Number of Observations:Q"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Number of Observations"}\NormalTok{),}
+\NormalTok{    tooltip}\OperatorTok{=}\NormalTok{[}\StringTok{"Year"}\NormalTok{, }\StringTok{"Number of Observations"}\NormalTok{]}
+\NormalTok{).properties(}
+\NormalTok{    title}\OperatorTok{=}\StringTok{"Number of Observations Per Year"}
+\NormalTok{)}
 
-\subsubsection{Step 2: Plotting Number of Observations Per
-Year}\label{step-2-plotting-number-of-observations-per-year}
+\NormalTok{obs\_chart.display()}
 
-\section{Group by `Year' and count the number of
-observations}\label{group-by-year-and-count-the-number-of-observations}
 
-observations\_per\_year = combined\_df.groupby(``Year'').size()
+\CommentTok{\# Plotting Number of Unique Hospitals Per Year}
+\NormalTok{unique\_hospitals }\OperatorTok{=}\NormalTok{ combined\_df.groupby(}\StringTok{"Year"}\NormalTok{)[}\StringTok{"PRVDR\_NUM"}\NormalTok{].nunique().reset\_index(name}\OperatorTok{=}\StringTok{"Number of Unique Hospitals"}\NormalTok{)}
 
-\section{Plot the number of observations per
-year}\label{plot-the-number-of-observations-per-year}
+\NormalTok{unique\_hospitals\_chart }\OperatorTok{=}\NormalTok{ alt.Chart(unique\_hospitals).mark\_bar().encode(}
+\NormalTok{    x}\OperatorTok{=}\NormalTok{alt.X(}\StringTok{"Year:O"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Year"}\NormalTok{), }
+\NormalTok{    y}\OperatorTok{=}\NormalTok{alt.Y(}\StringTok{"Number of Unique Hospitals:Q"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Number of Unique Hospitals"}\NormalTok{),}
+\NormalTok{    tooltip}\OperatorTok{=}\NormalTok{[}\StringTok{"Year"}\NormalTok{, }\StringTok{"Number of Unique Hospitals"}\NormalTok{]}
+\NormalTok{).properties(}
+\NormalTok{    title}\OperatorTok{=}\StringTok{"Number of Unique Hospitals Per Year"}
+\NormalTok{)}
 
-observations\_per\_year.plot(kind=``bar'', title=``Number of
-Observations Per Year'') plt.xlabel(``Year'') plt.ylabel(``Number of
-Observations'') plt.show()
+\NormalTok{unique\_hospitals\_chart.display()}
 
-\subsubsection{Step 3: Plotting Number of Unique Hospitals Per
-Year}\label{step-3-plotting-number-of-unique-hospitals-per-year}
 
-\section{Count the number of unique hospitals by year (using CMS
-Certification Number
-`CCN')}\label{count-the-number-of-unique-hospitals-by-year-using-cms-certification-number-ccn}
+\CommentTok{\#print("Observations Per Year:")}
+\CommentTok{\#print(observations\_per\_year)}
+\CommentTok{\#print("\textbackslash{}nUnique Hospitals Per Year:")}
+\CommentTok{\#print(unique\_hospitals\_per\_year)}
 
-unique\_hospitals\_per\_year =
-combined\_df.groupby(``Year''){[}``CCN''{]}.nunique()
+\CommentTok{\# Compare the two plots to understand the structure of the data.}
+\CommentTok{\# Observations per year may be higher due to multiple records for the same hospital.}
+\CommentTok{\# Unique hospitals per year give an idea of how many distinct hospitals are in the dataset for each year.}
+\end{Highlighting}
+\end{Shaded}
 
-\section{Plot the number of unique hospitals per
-year}\label{plot-the-number-of-unique-hospitals-per-year}
+\begin{verbatim}
+/opt/anaconda3/lib/python3.12/site-packages/altair/utils/core.py:395: FutureWarning:
 
-unique\_hospitals\_per\_year.plot(kind=``bar'', title=``Number of Unique
-Hospitals Per Year'') plt.xlabel(``Year'') plt.ylabel(``Number of Unique
-Hospitals'') plt.show()
+the convert_dtype parameter is deprecated and will be removed in a future version.  Do ``ser.astype(object).apply()`` instead if you want ``convert_dtype=False``.
+\end{verbatim}
 
-\subsubsection{Step 4: Comparison and
-Analysis}\label{step-4-comparison-and-analysis}
+\begin{verbatim}
+alt.Chart(...)
+\end{verbatim}
 
-print(``Observations Per Year:'') print(observations\_per\_year)
-print(``\nUnique Hospitals Per Year:'')
-print(unique\_hospitals\_per\_year)
+\begin{verbatim}
+/opt/anaconda3/lib/python3.12/site-packages/altair/utils/core.py:395: FutureWarning:
 
-\section{Compare the two plots to understand the structure of the
-data.}\label{compare-the-two-plots-to-understand-the-structure-of-the-data.}
+the convert_dtype parameter is deprecated and will be removed in a future version.  Do ``ser.astype(object).apply()`` instead if you want ``convert_dtype=False``.
+\end{verbatim}
 
-\section{Observations per year may be higher due to multiple records for
-the same
-hospital.}\label{observations-per-year-may-be-higher-due-to-multiple-records-for-the-same-hospital.}
-
-\section{Unique hospitals per year give an idea of how many distinct
-hospitals are in the dataset for each
-year.}\label{unique-hospitals-per-year-give-an-idea-of-how-many-distinct-hospitals-are-in-the-dataset-for-each-year.}
+\begin{verbatim}
+alt.Chart(...)
+\end{verbatim}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -558,16 +715,223 @@ year.}\label{unique-hospitals-per-year-give-an-idea-of-how-many-distinct-hospita
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-\item
-\item
-  \begin{enumerate}
-  \def\labelenumii{\alph{enumii}.}
-  \tightlist
-  \item
-  \item
-  \item
-  \end{enumerate}
+  Termination code equal to 00=ACTIVE PROVIDER. The data contain only up
+  to the code 07. The other codes apply to CLIA.
 \end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{] }\OperatorTok{=}\NormalTok{ combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{].astype(}\BuiltInTok{str}\NormalTok{)}
+
+\NormalTok{inactive\_codes }\OperatorTok{=}\NormalTok{ [}\StringTok{"01"}\NormalTok{, }\StringTok{"02"}\NormalTok{, }\StringTok{"03"}\NormalTok{, }\StringTok{"04"}\NormalTok{, }\StringTok{"05"}\NormalTok{, }\StringTok{"06"}\NormalTok{, }\StringTok{"07"}\NormalTok{]}
+
+\NormalTok{active\_2016 }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{==} \StringTok{"2016"}\NormalTok{) }\OperatorTok{\&}\NormalTok{ (combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"00"}\NormalTok{)]}
+
+\BuiltInTok{print}\NormalTok{(active\_2016.head())}
+
+\NormalTok{suspected\_closures }\OperatorTok{=}\NormalTok{ []}
+
+\ControlFlowTok{for}\NormalTok{ idx, hospital }\KeywordTok{in}\NormalTok{ active\_2016.iterrows():}
+\NormalTok{    provider\_num }\OperatorTok{=}\NormalTok{ hospital[}\StringTok{"PRVDR\_NUM"}\NormalTok{]}
+\NormalTok{    facility\_name }\OperatorTok{=}\NormalTok{ hospital[}\StringTok{"FAC\_NAME"}\NormalTok{]}
+\NormalTok{    zip\_code }\OperatorTok{=}\NormalTok{ hospital[}\StringTok{"ZIP\_CD"}\NormalTok{]}
+    
+    \ControlFlowTok{for}\NormalTok{ year }\KeywordTok{in}\NormalTok{ [}\StringTok{"2017"}\NormalTok{, }\StringTok{"2018"}\NormalTok{, }\StringTok{"2019"}\NormalTok{]:}
+\NormalTok{        yearly\_data }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{"PRVDR\_NUM"}\NormalTok{] }\OperatorTok{==}\NormalTok{ provider\_num) }\OperatorTok{\&}\NormalTok{ (combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{==}\NormalTok{ year)]}
+        
+        \ControlFlowTok{if}\NormalTok{ yearly\_data.empty }\KeywordTok{or}\NormalTok{ yearly\_data[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{].isin(inactive\_codes).}\BuiltInTok{any}\NormalTok{():}
+\NormalTok{            suspected\_closures.append(\{}
+                \StringTok{"Provider Number"}\NormalTok{: provider\_num,}
+                \StringTok{"Facility Name"}\NormalTok{: facility\_name,}
+                \StringTok{"ZIP Code"}\NormalTok{: zip\_code,}
+                \StringTok{"Year Closed"}\NormalTok{: year}
+\NormalTok{            \})}
+            \ControlFlowTok{break}  
+
+\NormalTok{suspected\_closures\_df }\OperatorTok{=}\NormalTok{ pd.DataFrame(suspected\_closures)}
+\NormalTok{num\_closures }\OperatorTok{=} \BuiltInTok{len}\NormalTok{(suspected\_closures\_df)}
+
+\NormalTok{display(}\SpecialStringTok{f"Total suspected hospital closures: }\SpecialCharTok{\{}\NormalTok{num\_closures}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+\NormalTok{display(suspected\_closures\_df.head()) }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+  PRVDR_CTGRY_CD PRVDR_CTGRY_SBTYP_CD PRVDR_NUM PGM_TRMNTN_CD  \
+0             01                   01    010001            00   
+2             01                   01    010005            00   
+3             01                   01    010006            00   
+4             01                   01    010007            00   
+5             01                   01    010008            00   
+
+                           FAC_NAME ZIP_CD STATE_CD  Year  
+0  SOUTHEAST ALABAMA MEDICAL CENTER  36301       AL  2016  
+2     MARSHALL MEDICAL CENTER SOUTH  35957       AL  2016  
+3    ELIZA COFFEE MEMORIAL HOSPITAL  35631       AL  2016  
+4          MIZELL MEMORIAL HOSPITAL  36467       AL  2016  
+5       CRENSHAW COMMUNITY HOSPITAL  36049       AL  2016  
+\end{verbatim}
+
+\begin{verbatim}
+'Total suspected hospital closures: 174'
+\end{verbatim}
+
+\begin{longtable}[]{@{}lllll@{}}
+\toprule\noalign{}
+& Provider Number & Facility Name & ZIP Code & Year Closed \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+0 & 010032 & WEDOWEE HOSPITAL & 36278 & 2019 \\
+1 & 010047 & GEORGIANA MEDICAL CENTER & 36033 & 2019 \\
+2 & 010146 & RMC JACKSONVILLE & 36265 & 2018 \\
+3 & 010172 & NORTH ALABAMA SPECIALITY HOSPITAL & 35611 & 2018 \\
+4 & 030001 & ABRAZO MARYVALE CAMPUS & 85031 & 2017 \\
+\end{longtable}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sorted\_closures }\OperatorTok{=}\NormalTok{ suspected\_closures\_df.sort\_values(by}\OperatorTok{=}\StringTok{"Facility Name"}\NormalTok{)}
+
+\NormalTok{top\_10\_closures }\OperatorTok{=}\NormalTok{ sorted\_closures[[}\StringTok{"Facility Name"}\NormalTok{, }\StringTok{"Year Closed"}\NormalTok{]].head(}\DecValTok{10}\NormalTok{)}
+
+\NormalTok{display(top\_10\_closures)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+& Facility Name & Year Closed \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+4 & ABRAZO MARYVALE CAMPUS & 2017 \\
+10 & ADVENTIST MEDICAL CENTER - CENTRAL VALLEY & 2017 \\
+97 & AFFINITY MEDICAL CENTER & 2018 \\
+80 & ALBANY MEDICAL CENTER / SOUTH CLINICAL CAMPUS & 2017 \\
+140 & ALLEGIANCE SPECIALTY HOSPITAL OF KILGORE & 2017 \\
+62 & ALLIANCE LAIRD HOSPITAL & 2019 \\
+101 & ALLIANCEHEALTH DEACONESS & 2019 \\
+26 & ANNE BATES LEACH EYE HOSPITAL & 2019 \\
+21 & ARKANSAS VALLEY REGIONAL MEDICAL CENTER & 2017 \\
+69 & BANNER CHURCHILL COMMUNITY HOSPITAL & 2017 \\
+\end{longtable}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{=}\NormalTok{ combined\_df[}\StringTok{"Year"}\NormalTok{].astype(}\BuiltInTok{int}\NormalTok{) }\CommentTok{\# Ensure the Year column is properly converted to integer}
+\NormalTok{combined\_df[}\StringTok{"ZIP\_CD"}\NormalTok{] }\OperatorTok{=}\NormalTok{ combined\_df[}\StringTok{"ZIP\_CD"}\NormalTok{].astype(}\BuiltInTok{str}\NormalTok{)  }\CommentTok{\# ZIP code as string}
+
+\CommentTok{\# Check the data types to confirm they are as expected}
+\BuiltInTok{print}\NormalTok{(combined\_df.dtypes)  }\CommentTok{\# This should show Year as int and ZIP\_CD as object (string)}
+
+\CommentTok{\# Initialize list to store true closures}
+\NormalTok{true\_closures }\OperatorTok{=}\NormalTok{ []}
+
+\CommentTok{\# Loop through each suspected closure}
+\ControlFlowTok{for}\NormalTok{ idx, row }\KeywordTok{in}\NormalTok{ suspected\_closures\_df.iterrows():}
+\NormalTok{    provider\_num }\OperatorTok{=}\NormalTok{ row[}\StringTok{"Provider Number"}\NormalTok{]}
+\NormalTok{    zip\_code }\OperatorTok{=} \BuiltInTok{str}\NormalTok{(row[}\StringTok{"ZIP Code"}\NormalTok{])  }\CommentTok{\# Convert ZIP code to string}
+\NormalTok{    year\_closed }\OperatorTok{=} \BuiltInTok{int}\NormalTok{(row[}\StringTok{"Year Closed"}\NormalTok{])  }\CommentTok{\# Ensure closure year is an integer}
+    
+    \CommentTok{\# Count active hospitals in the closure year and the year after}
+\NormalTok{    active\_in\_year }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{"ZIP\_CD"}\NormalTok{] }\OperatorTok{==}\NormalTok{ zip\_code) }\OperatorTok{\&} 
+\NormalTok{                                 (combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{==}\NormalTok{ year\_closed) }\OperatorTok{\&} 
+\NormalTok{                                 (combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"00"}\NormalTok{)].shape[}\DecValTok{0}\NormalTok{]}
+    
+\NormalTok{    active\_in\_next\_year }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{"ZIP\_CD"}\NormalTok{] }\OperatorTok{==}\NormalTok{ zip\_code) }\OperatorTok{\&} 
+\NormalTok{                                      (combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{==}\NormalTok{ (year\_closed }\OperatorTok{+} \DecValTok{1}\NormalTok{)) }\OperatorTok{\&} 
+\NormalTok{                                      (combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"00"}\NormalTok{)].shape[}\DecValTok{0}\NormalTok{]}
+    
+    \CommentTok{\# Keep closure if the number of active hospitals decreases}
+    \ControlFlowTok{if}\NormalTok{ active\_in\_next\_year }\OperatorTok{\textless{}}\NormalTok{ active\_in\_year:}
+\NormalTok{        true\_closures.append(row)}
+
+\CommentTok{\# Convert true closures to DataFrame}
+\NormalTok{true\_closures\_df }\OperatorTok{=}\NormalTok{ pd.DataFrame(true\_closures)}
+\NormalTok{num\_true\_closures }\OperatorTok{=} \BuiltInTok{len}\NormalTok{(true\_closures\_df)}
+
+\NormalTok{display(}\SpecialStringTok{f"Total true hospital closures: }\SpecialCharTok{\{}\NormalTok{num\_true\_closures}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+\NormalTok{display(true\_closures\_df) }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+PRVDR_CTGRY_CD          object
+PRVDR_CTGRY_SBTYP_CD    object
+PRVDR_NUM               object
+PGM_TRMNTN_CD           object
+FAC_NAME                object
+ZIP_CD                  object
+STATE_CD                object
+Year                     int64
+dtype: object
+\end{verbatim}
+
+\begin{verbatim}
+'Total true hospital closures: 26'
+\end{verbatim}
+
+\begin{longtable}[]{@{}lllll@{}}
+\toprule\noalign{}
+& Provider Number & Facility Name & ZIP Code & Year Closed \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+9 & 050153 & O\textquotesingle CONNOR HOSPITAL & 95128 & 2019 \\
+16 & 050751 & MIRACLE MILE MEDICAL CENTER & 90036 & 2019 \\
+24 & 100009 & UNIVERSITY OF MIAMI HOSPITAL & 33136 & 2019 \\
+26 & 100240 & ANNE BATES LEACH EYE HOSPITAL & 33136 & 2019 \\
+30 & 110004 & HUTCHESON MEDICAL CENTER & 30742 & 2019 \\
+31 & 110039 & TRINITY HOSPITAL OF AUGUSTA & 30904 & 2018 \\
+33 & 110187 & CHESTATEE REGIONAL HOSPITAL & 30533 & 2019 \\
+34 & 130067 & IDAHO DOCTORS HOSPITAL & 83221 & 2019 \\
+36 & 150175 & THE HEART HOSPITAL AT DEACONESS GATEWAY LLC & 47630 &
+2019 \\
+38 & 150182 & FRANCISCAN HEALTH CARMEL & 46032 & 2019 \\
+42 & 180021 & PINEVILLE COMMUNITY HOSPITAL & 40977 & 2019 \\
+47 & 190205 & WOMEN\textquotesingle S AND CHILDREN\textquotesingle S
+HOSPITAL & 70508 & 2019 \\
+52 & 190268 & LAFAYETTE GENERAL SURGICAL HOSPITAL & 70503 & 2019 \\
+53 & 190297 & DOCTORS HOSPITAL AT DEER CREEK L L C & 71446 & 2019 \\
+65 & 260227 & BLACK RIVER COMMUNITY MEDICAL CENTER & 63901 & 2019 \\
+85 & 330387 & ROCKEFELLER UNIVERSITY HOSPITAL & 10021 & 2019 \\
+96 & 360141 & NORTHSIDE MEDICAL CENTER & 44501 & 2019 \\
+101 & 370032 & ALLIANCEHEALTH DEACONESS & 73112 & 2019 \\
+111 & 390061 & LANCASTER REGIONAL MEDICAL CENTER & 17604 & 2019 \\
+115 & 390302 & BARIX CLINICS OF PENNSYLVANIA & 19047 & 2019 \\
+125 & 440067 & LAKEWAY REGIONAL HOSPITAL & 37814 & 2019 \\
+148 & 450766 & UT SOUTHWESTERN UNIVERSITY HOSPITAL-ZALE LIPSHY & 75390 &
+2019 \\
+149 & 450845 & EL PASO SPECIALTY HOSPITAL & 79902 & 2019 \\
+150 & 450894 & PINE CREEK MEDICAL CENTER LLP & 75235 & 2019 \\
+154 & 510039 & OHIO VALLEY MEDICAL CENTER & 26003 & 2019 \\
+166 & 670087 & BAYLOR SCOTT \& WHITE EMERGENCY MEDICAL CENTER ... &
+78613 & 2019 \\
+\end{longtable}
+
+\begin{verbatim}
+a.
+b.
+c.
+\end{verbatim}
 
 \subsection{Download Census zip code shapefile (10
 pt)}\label{download-census-zip-code-shapefile-10-pt}
@@ -593,6 +957,18 @@ pts)
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ geopandas }\ImportTok{as}\NormalTok{ gpd}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
 \item
 \item
 \item

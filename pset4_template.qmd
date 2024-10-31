@@ -26,12 +26,12 @@ include-before-body:
 1. This problem set is a paired problem set.
 2. Play paper, scissors, rock to determine who goes first. Call that person Partner 1.
 • Partner 1 (name and cnet ID): Alejandra Silva - aosilva
-• Partner 2 (name and cnet ID):
+• Partner 2 (name and cnet ID): Guillermina Marto - gmarto
 3. Partner 1 will accept the ps4 and then share the link it creates with their partner.
 You can only share it with one partner so you will not be able to change it after your
 partner has accepted.
 4. “This submission is our work alone and complies with the 30538 integrity policy.” Add
-your initials to indicate your agreement: **__** **__**
+your initials to indicate your agreement: **__** **GM**
 5. “I have uploaded the names of anyone else other than my partner and I worked with
 on the problem set here” (1 point)
 6. Late coins used this pset: **__** Late coins left after submission: **__**
@@ -239,10 +239,10 @@ unique_hospitals_chart = alt.Chart(unique_hospitals).mark_bar().encode(
 unique_hospitals_chart.display()
 
 
-print("Observations Per Year:")
-print(observations_per_year)
-print("\nUnique Hospitals Per Year:")
-print(unique_hospitals_per_year)
+#print("Observations Per Year:")
+#print(observations_per_year)
+#print("\nUnique Hospitals Per Year:")
+#print(unique_hospitals_per_year)
 
 # Compare the two plots to understand the structure of the data.
 # Observations per year may be higher due to multiple records for the same hospital.
@@ -255,12 +255,116 @@ print(unique_hospitals_per_year)
 
 ## Identify hospital closures in POS file (15 pts) (*)
 
-1. 
+1. Termination code equal to 00=ACTIVE PROVIDER. The data contain only up to the code 07. The other codes apply to CLIA. 
+
+```{python}
+
+combined_df["PGM_TRMNTN_CD"] = combined_df["PGM_TRMNTN_CD"].astype(str)
+
+inactive_codes = ["01", "02", "03", "04", "05", "06", "07"]
+
+active_2016 = combined_df[(combined_df["Year"] == "2016") & (combined_df["PGM_TRMNTN_CD"] == "00")]
+
+print(active_2016.head())
+
+suspected_closures = []
+
+for idx, hospital in active_2016.iterrows():
+    provider_num = hospital["PRVDR_NUM"]
+    facility_name = hospital["FAC_NAME"]
+    zip_code = hospital["ZIP_CD"]
+    
+    for year in ["2017", "2018", "2019"]:
+        yearly_data = combined_df[(combined_df["PRVDR_NUM"] == provider_num) & (combined_df["Year"] == year)]
+        
+        if yearly_data.empty or yearly_data["PGM_TRMNTN_CD"].isin(inactive_codes).any():
+            suspected_closures.append({
+                "Provider Number": provider_num,
+                "Facility Name": facility_name,
+                "ZIP Code": zip_code,
+                "Year Closed": year
+            })
+            break  
+
+suspected_closures_df = pd.DataFrame(suspected_closures)
+num_closures = len(suspected_closures_df)
+
+display(f"Total suspected hospital closures: {num_closures}")
+display(suspected_closures_df.head()) 
+
+
+```
+
 2. 
+
+```{python}
+sorted_closures = suspected_closures_df.sort_values(by="Facility Name")
+
+top_10_closures = sorted_closures[["Facility Name", "Year Closed"]].head(10)
+
+display(top_10_closures)
+
+```
+
 3. 
-    a.
-    b.
-    c.
+
+```{python}
+
+combined_df["Year"] = combined_df["Year"].astype(int) # Ensure the Year column is properly converted to integer
+combined_df["ZIP_CD"] = combined_df["ZIP_CD"].astype(str)  # ZIP code as string
+
+# Check the data types to confirm they are as expected
+print(combined_df.dtypes)  # This should show Year as int and ZIP_CD as object (string)
+
+# Initialize list to store true closures
+true_closures = []
+
+# Loop through each suspected closure
+for idx, row in suspected_closures_df.iterrows():
+    provider_num = row["Provider Number"]
+    zip_code = str(row["ZIP Code"])  # Convert ZIP code to string
+    year_closed = int(row["Year Closed"])  # Ensure closure year is an integer
+    
+    # Count active hospitals in the closure year and the year after
+    active_in_year = combined_df[(combined_df["ZIP_CD"] == zip_code) & 
+                                 (combined_df["Year"] == year_closed) & 
+                                 (combined_df["PGM_TRMNTN_CD"] == "00")].shape[0]
+    
+    active_in_next_year = combined_df[(combined_df["ZIP_CD"] == zip_code) & 
+                                      (combined_df["Year"] == (year_closed + 1)) & 
+                                      (combined_df["PGM_TRMNTN_CD"] == "00")].shape[0]
+    
+    # Keep closure if the number of active hospitals decreases
+    if active_in_next_year < active_in_year:
+        true_closures.append(row)
+
+# Convert true closures to DataFrame
+true_closures_df = pd.DataFrame(true_closures)
+num_true_closures = len(true_closures_df)
+
+display(f"Total true hospital closures: {num_true_closures}")
+display(true_closures_df) 
+
+```
+
+```{python}
+# a) Calculate the number of hospitals fitting the potential merger/acquisition definition
+num_potential_mergers = len(suspected_closures_df) - len(true_closures_df)
+
+# b) Calculate the number of hospitals left after correcting for mergers/acquisitions
+num_corrected_closures = len(true_closures_df)
+
+# c) Sort the corrected list of closures by name and display the first 10 rows
+corrected_closures_sorted = true_closures_df.sort_values(by="Facility Name").head(10)
+
+# Display results
+display(f"Number of potential mergers/acquisitions: {num_potential_mergers}")
+display(f"Number of corrected closures: {num_corrected_closures}")
+display("Corrected closures sorted by Facility Name:")
+display(corrected_closures_sorted)
+
+```
+
 
 ## Download Census zip code shapefile (10 pt) 
 
@@ -272,6 +376,11 @@ print(unique_hospitals_per_year)
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
 1. 
+
+```{python}
+import geopandas as gpd
+```
+
 2. 
 3. 
 4. 

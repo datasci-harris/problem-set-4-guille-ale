@@ -33,12 +33,12 @@
         "1. This problem set is a paired problem set.\n",
         "2. Play paper, scissors, rock to determine who goes first. Call that person Partner 1.\n",
         "• Partner 1 (name and cnet ID): Alejandra Silva - aosilva\n",
-        "• Partner 2 (name and cnet ID):\n",
+        "• Partner 2 (name and cnet ID): Guillermina Marto - gmarto\n",
         "3. Partner 1 will accept the ps4 and then share the link it creates with their partner.\n",
         "You can only share it with one partner so you will not be able to change it after your\n",
         "partner has accepted.\n",
         "4. “This submission is our work alone and complies with the 30538 integrity policy.” Add\n",
-        "your initials to indicate your agreement: **__** **__**\n",
+        "your initials to indicate your agreement: **__** **GM**\n",
         "5. “I have uploaded the names of anyone else other than my partner and I worked with\n",
         "on the problem set here” (1 point)\n",
         "6. Late coins used this pset: **__** Late coins left after submission: **__**\n",
@@ -54,7 +54,7 @@
         "\n",
         "1. \n"
       ],
-      "id": "99de6636"
+      "id": "a88d2040"
     },
     {
       "cell_type": "code",
@@ -115,7 +115,7 @@
         "\n",
         "df.to_csv(\"pos2016.csv\", index=False)\n"
       ],
-      "id": "a7945bec",
+      "id": "d690f6ae",
       "execution_count": null,
       "outputs": []
     },
@@ -125,7 +125,7 @@
       "source": [
         "2. "
       ],
-      "id": "5f06d612"
+      "id": "b878149d"
     },
     {
       "cell_type": "code",
@@ -144,7 +144,7 @@
         "\n",
         "print(df_st_hospitals)"
       ],
-      "id": "15582d71",
+      "id": "c7889aeb",
       "execution_count": null,
       "outputs": []
     },
@@ -160,7 +160,7 @@
         "\n",
         "3. \n"
       ],
-      "id": "4f2e98c1"
+      "id": "488725a9"
     },
     {
       "cell_type": "code",
@@ -236,7 +236,7 @@
         "\n",
         "print(f\"Total records retrieved across all years: {combined_df.shape[0]}\")"
       ],
-      "id": "4a9d6234",
+      "id": "0bee2cc4",
       "execution_count": null,
       "outputs": []
     },
@@ -275,16 +275,16 @@
         "unique_hospitals_chart.display()\n",
         "\n",
         "\n",
-        "print(\"Observations Per Year:\")\n",
-        "print(observations_per_year)\n",
-        "print(\"\\nUnique Hospitals Per Year:\")\n",
-        "print(unique_hospitals_per_year)\n",
+        "#print(\"Observations Per Year:\")\n",
+        "#print(observations_per_year)\n",
+        "#print(\"\\nUnique Hospitals Per Year:\")\n",
+        "#print(unique_hospitals_per_year)\n",
         "\n",
         "# Compare the two plots to understand the structure of the data.\n",
         "# Observations per year may be higher due to multiple records for the same hospital.\n",
         "# Unique hospitals per year give an idea of how many distinct hospitals are in the dataset for each year."
       ],
-      "id": "17ea238d",
+      "id": "1049c70e",
       "execution_count": null,
       "outputs": []
     },
@@ -298,9 +298,151 @@
         "\n",
         "## Identify hospital closures in POS file (15 pts) (*)\n",
         "\n",
-        "1. \n",
-        "2. \n",
-        "3. \n",
+        "1. Termination code equal to 00=ACTIVE PROVIDER. The data contain only up to the code 07. The other codes apply to CLIA. \n"
+      ],
+      "id": "2fe588de"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "combined_df[\"PGM_TRMNTN_CD\"] = combined_df[\"PGM_TRMNTN_CD\"].astype(str)\n",
+        "\n",
+        "inactive_codes = [\"01\", \"02\", \"03\", \"04\", \"05\", \"06\", \"07\"]\n",
+        "\n",
+        "active_2016 = combined_df[(combined_df[\"Year\"] == \"2016\") & (combined_df[\"PGM_TRMNTN_CD\"] == \"00\")]\n",
+        "\n",
+        "print(active_2016.head())\n",
+        "\n",
+        "suspected_closures = []\n",
+        "\n",
+        "for idx, hospital in active_2016.iterrows():\n",
+        "    provider_num = hospital[\"PRVDR_NUM\"]\n",
+        "    facility_name = hospital[\"FAC_NAME\"]\n",
+        "    zip_code = hospital[\"ZIP_CD\"]\n",
+        "    \n",
+        "    for year in [\"2017\", \"2018\", \"2019\"]:\n",
+        "        yearly_data = combined_df[(combined_df[\"PRVDR_NUM\"] == provider_num) & (combined_df[\"Year\"] == year)]\n",
+        "        \n",
+        "        if yearly_data.empty or yearly_data[\"PGM_TRMNTN_CD\"].isin(inactive_codes).any():\n",
+        "            suspected_closures.append({\n",
+        "                \"Provider Number\": provider_num,\n",
+        "                \"Facility Name\": facility_name,\n",
+        "                \"ZIP Code\": zip_code,\n",
+        "                \"Year Closed\": year\n",
+        "            })\n",
+        "            break  \n",
+        "\n",
+        "suspected_closures_df = pd.DataFrame(suspected_closures)\n",
+        "num_closures = len(suspected_closures_df)\n",
+        "\n",
+        "display(f\"Total suspected hospital closures: {num_closures}\")\n",
+        "display(suspected_closures_df.head()) \n"
+      ],
+      "id": "86050fd8",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "2. \n"
+      ],
+      "id": "b10685d8"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "sorted_closures = suspected_closures_df.sort_values(by=\"Facility Name\")\n",
+        "\n",
+        "top_10_closures = sorted_closures[[\"Facility Name\", \"Year Closed\"]].head(10)\n",
+        "\n",
+        "display(top_10_closures)"
+      ],
+      "id": "846bb102",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "3. \n"
+      ],
+      "id": "4ccce6bc"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "combined_df[\"Year\"] = combined_df[\"Year\"].astype(int) # Ensure the Year column is properly converted to integer\n",
+        "combined_df[\"ZIP_CD\"] = combined_df[\"ZIP_CD\"].astype(str)  # ZIP code as string\n",
+        "\n",
+        "# Check the data types to confirm they are as expected\n",
+        "print(combined_df.dtypes)  # This should show Year as int and ZIP_CD as object (string)\n",
+        "\n",
+        "# Initialize list to store true closures\n",
+        "true_closures = []\n",
+        "\n",
+        "# Loop through each suspected closure\n",
+        "for idx, row in suspected_closures_df.iterrows():\n",
+        "    provider_num = row[\"Provider Number\"]\n",
+        "    zip_code = str(row[\"ZIP Code\"])  # Convert ZIP code to string\n",
+        "    year_closed = int(row[\"Year Closed\"])  # Ensure closure year is an integer\n",
+        "    \n",
+        "    # Count active hospitals in the closure year and the year after\n",
+        "    active_in_year = combined_df[(combined_df[\"ZIP_CD\"] == zip_code) & \n",
+        "                                 (combined_df[\"Year\"] == year_closed) & \n",
+        "                                 (combined_df[\"PGM_TRMNTN_CD\"] == \"00\")].shape[0]\n",
+        "    \n",
+        "    active_in_next_year = combined_df[(combined_df[\"ZIP_CD\"] == zip_code) & \n",
+        "                                      (combined_df[\"Year\"] == (year_closed + 1)) & \n",
+        "                                      (combined_df[\"PGM_TRMNTN_CD\"] == \"00\")].shape[0]\n",
+        "    \n",
+        "    # Keep closure if the number of active hospitals decreases\n",
+        "    if active_in_next_year < active_in_year:\n",
+        "        true_closures.append(row)\n",
+        "\n",
+        "# Convert true closures to DataFrame\n",
+        "true_closures_df = pd.DataFrame(true_closures)\n",
+        "num_true_closures = len(true_closures_df)\n",
+        "\n",
+        "display(f\"Total true hospital closures: {num_true_closures}\")\n",
+        "display(true_closures_df) "
+      ],
+      "id": "359072c5",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# a) Calculate the number of hospitals fitting the potential merger/acquisition definition\n",
+        "num_potential_mergers = len(suspected_closures_df) - len(true_closures_df)\n",
+        "\n",
+        "# b) Calculate the number of hospitals left after correcting for mergers/acquisitions\n",
+        "num_corrected_closures = len(true_closures_df)\n",
+        "\n",
+        "# c) Sort the corrected list of closures by name and display the first 10 rows\n",
+        "corrected_closures_sorted = true_closures_df.sort_values(by=\"Facility Name\").head(10)\n",
+        "\n",
+        "# Display results\n",
+        "print(f\"Number of potential mergers/acquisitions: {num_potential_mergers}\")\n",
+        "print(f\"Number of corrected closures: {num_corrected_closures}\")\n",
+        "print(\"Corrected closures sorted by Facility Name:\")\n",
+        "print(corrected_closures_sorted)"
+      ],
+      "id": "544dc4ca",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
         "    a.\n",
         "    b.\n",
         "    c.\n",
@@ -314,7 +456,24 @@
         "\n",
         "## Calculate zip code’s distance to the nearest hospital (20 pts) (*)\n",
         "\n",
-        "1. \n",
+        "1. \n"
+      ],
+      "id": "e7cac73c"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "import geopandas as gpd"
+      ],
+      "id": "dff7a77e",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
         "2. \n",
         "3. \n",
         "4. \n",
@@ -335,7 +494,7 @@
         "\n",
         "## Reflecting on the exercise (10 pts) "
       ],
-      "id": "d23f0802"
+      "id": "f4c3af54"
     }
   ],
   "metadata": {
@@ -343,7 +502,7 @@
       "name": "python3",
       "language": "python",
       "display_name": "Python 3 (ipykernel)",
-      "path": "C:\\Users\\aosil\\AppData\\Local\\Programs\\Python\\Python312\\share\\jupyter\\kernels\\python3"
+      "path": "/opt/anaconda3/share/jupyter/kernels/python3"
     }
   },
   "nbformat": 4,
