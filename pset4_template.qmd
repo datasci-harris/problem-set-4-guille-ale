@@ -18,29 +18,29 @@ include-before-body:
 ---
 
 **PS4:** Due Sat Nov 2 at 5:00PM Central. Worth 100 points. 
-
-## Style Points (10 pts)
+We use (`*`) to indicate a problem that we think might be time consuming. 
+    
+## Style Points (10 pts) 
+Please refer to the minilesson on code style
+**[here](https://uchicago.zoom.us/rec/share/pG_wQ-pHTQrJTmqNn4rcrw5V194M2H2s-2jdy8oVhWHkd_yZt9o162IWurpA-fxU.BIQlSgZLRYctvzp-)**.
 
 
 ## Submission Steps (10 pts)
 1. This problem set is a paired problem set.
-2. Play paper, scissors, rock to determine who goes first. Call that person Partner 1.
-• Partner 1 (name and cnet ID): Alejandra Silva - aosilva
-• Partner 2 (name and cnet ID): Guillermina Marto - gmarto
-3. Partner 1 will accept the ps4 and then share the link it creates with their partner.
-You can only share it with one partner so you will not be able to change it after your
-partner has accepted.
-4. “This submission is our work alone and complies with the 30538 integrity policy.” Add
-your initials to indicate your agreement: **__** **GM**
-5. “I have uploaded the names of anyone else other than my partner and I worked with
-on the problem set here” (1 point)
-6. Late coins used this pset: **__** Late coins left after submission: **__**
-7. Knit your ps4.qmd to an PDF file to make ps4.pdf,
-• The PDF should not be more than 25 pages. Use head() and re-size figures when
-appropriate.
-8. (Partner 1): push ps4.qmd and ps4.pdf to your github repo.
-9. (Partner 1): submit ps4.pdf via Gradescope. Add your partner on Gradescope.
+2. Play paper, scissors, rock to determine who goes first. Call that person *Partner 1*.
+    - Partner 1 (name and cnet ID): Alejandra Silva - aosilva
+    - Partner 2 (name and cnet ID): Guillermina Marto - gmarto
+3. Partner 1 will accept the `ps4` and then share the link it creates with their partner. You can only share it with one partner so you will not be able to change it after your partner has accepted. 
+4. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: **AS** **GM**
+5. "I have uploaded the names of anyone else other than my partner and I worked with on the problem set **[here](https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit)**"  (1 point)
+6. Late coins used this pset: \*\*\_\_\*\* Late coins left after submission: \*\*\_\_\*\*
+7. Knit your `ps4.qmd` to an PDF file to make `ps4.pdf`, 
+    * The PDF should not be more than 25 pages. Use `head()` and re-size figures when appropriate. 
+8. (Partner 1): push  `ps4.qmd` and `ps4.pdf` to your github repo.
+9. (Partner 1): submit `ps4.pdf` via Gradescope. Add your partner on Gradescope.
 10. (Partner 1): tag your submission in Gradescope
+
+**Important:** Repositories are for tracking code. **Do not commit the data or shapefiles to your repo.** The best way to do this is with `.gitignore`, which we have covered in class. If you do accidentally commit the data, Github has a [guide](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github#removing-files-from-a-repositorys-history). The best course of action depends on whether you have pushed yet. This also means that both partners will have to download the initial raw data and any data cleaning code will need to be re-run on both partners' computers. 
 
 
 ## Download and explore the Provider of Services (POS) file (10 pts)
@@ -481,74 +481,7 @@ display(zips_withhospital_centroids.head())
 
 4. 
     a.
-
-```{python}
-from shapely.ops import nearest_points
-import time
-
-# The geometry column is set as active in both GeoDataFrames
-zips_texas_centroids = zips_texas_centroids.set_geometry('geometry')
-zips_withhospital_centroids = zips_withhospital_centroids.set_geometry('geometry')
-
-# Subset to 10 ZIP codes from zips_texas_centroids for testing
-test_zips_texas = zips_texas_centroids.head(10)
-
-# Start timer
-start_time = time.time()
-
-# Calculate distances for each ZIP code in test subset
-distances = []
-for idx, row in test_zips_texas.iterrows():
-    # Calculate the distance to the nearest hospital ZIP code
-    nearest_hospital = zips_withhospital_centroids.distance(row.geometry).min()
-    distances.append(nearest_hospital)
-
-# End timer
-end_time = time.time()
-elapsed_time = end_time - start_time
-
-# Output the time taken and estimated total time for the full dataset
-print("Time taken for 10 ZIP codes:", elapsed_time, "seconds")
-
-# Estimate total time 
-total_rows = len(zips_texas_centroids)
-estimated_total_time = (elapsed_time / 10) * total_rows
-print("Estimated time for entire dataset:", estimated_total_time, "seconds")
-
-```
-
     b.
-
-The full dataset calculation completed significantly faster than initially estimated, suggesting that the small sample used for estimation might have over-predicted the time required. This difference could be due to optimizations in the spatial library that enhance performance with larger datasets, as well as variations in system performance between runs. Small sample estimates can sometimes lead to overestimations when the operation scales more efficiently across a larger volume of data. 
-
-```{python}
-import time
-
-# Start timer for the full calculation
-start_time_full = time.time()
-
-# Calculate distances for each ZIP code in the entire Texas subset
-full_distances = []
-for idx, row in zips_texas_centroids.iterrows():
-    # Calculate the distance to the nearest hospital ZIP code
-    nearest_hospital_distance = zips_withhospital_centroids.distance(row.geometry).min()
-    full_distances.append(nearest_hospital_distance)
-
-# End timer
-end_time_full = time.time()
-elapsed_time_full = end_time_full - start_time_full
-
-# Output the actual time taken
-print("Actual time taken for full dataset:", elapsed_time_full, "seconds")
-
-# Compare to estimated time from previous step
-estimated_total_time = (elapsed_time / 10) * len(zips_texas_centroids)  # Using the previous subset estimate
-print("Estimated time for entire dataset:", estimated_total_time, "seconds")
-print("Difference between actual and estimated time:", abs(elapsed_time_full - estimated_total_time), "seconds")
-
-
-```
-
     c.
 5. 
     a.
