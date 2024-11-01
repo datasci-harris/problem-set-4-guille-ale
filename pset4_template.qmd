@@ -481,7 +481,72 @@ display(zips_withhospital_centroids.head())
 
 4. 
     a.
+
+```{python}
+from shapely.ops import nearest_points
+import time
+
+# The geometry column is set as active in both GeoDataFrames
+zips_texas_centroids = zips_texas_centroids.set_geometry('geometry')
+zips_withhospital_centroids = zips_withhospital_centroids.set_geometry('geometry')
+
+# Subset to 10 ZIP codes from zips_texas_centroids for testing
+test_zips_texas = zips_texas_centroids.head(10)
+
+# Start timer
+start_time = time.time()
+
+# Calculate distances for each ZIP code in test subset
+distances = []
+for idx, row in test_zips_texas.iterrows():
+    # Calculate the distance to the nearest hospital ZIP code
+    nearest_hospital = zips_withhospital_centroids.distance(row.geometry).min()
+    distances.append(nearest_hospital)
+
+# End timer
+end_time = time.time()
+elapsed_time = end_time - start_time
+
+# Output the time taken and estimated total time for the full dataset
+print("Time taken for 10 ZIP codes:", elapsed_time, "seconds")
+
+# Estimate total time 
+total_rows = len(zips_texas_centroids)
+estimated_total_time = (elapsed_time / 10) * total_rows
+print("Estimated time for entire dataset:", estimated_total_time, "seconds")
+
+```
     b.
+The full dataset calculation completed significantly faster than initially estimated, suggesting that the small sample used for estimation might have over-predicted the time required. This difference could be due to optimizations in the spatial library that enhance performance with larger datasets, as well as variations in system performance between runs. Small sample estimates can sometimes lead to overestimations when the operation scales more efficiently across a larger volume of data. 
+
+```{python}
+import time
+
+# Start timer for the full calculation
+start_time_full = time.time()
+
+# Calculate distances for each ZIP code in the entire Texas subset
+full_distances = []
+for idx, row in zips_texas_centroids.iterrows():
+    # Calculate the distance to the nearest hospital ZIP code
+    nearest_hospital_distance = zips_withhospital_centroids.distance(row.geometry).min()
+    full_distances.append(nearest_hospital_distance)
+
+# End timer
+end_time_full = time.time()
+elapsed_time_full = end_time_full - start_time_full
+
+# Output the actual time taken
+print("Actual time taken for full dataset:", elapsed_time_full, "seconds")
+
+# Compare to estimated time from previous step
+estimated_total_time = (elapsed_time / 10) * len(zips_texas_centroids)  # Using the previous subset estimate
+print("Estimated time for entire dataset:", estimated_total_time, "seconds")
+print("Difference between actual and estimated time:", abs(elapsed_time_full - estimated_total_time), "seconds")
+
+
+```
+
     c.
 5. 
     a.
