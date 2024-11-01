@@ -309,83 +309,246 @@ display(top_10_closures)
 3. 
 
 ```{python}
+import pandas as pd
+import numpy as np
 
-combined_df["Year"] = combined_df["Year"].astype(int) # Ensure the Year column is properly converted to integer
-combined_df["ZIP_CD"] = combined_df["ZIP_CD"].astype(str)  # ZIP code as string
+# Step 1: Count the number of active hospitals (PGM_TRMNTN_CD == "00") by ZIP_CD (zip code) for each year
+active_hospitals_by_year = (
+    combined_df[combined_df['PGM_TRMNTN_CD'] == "00"]
+    .groupby(['ZIP_CD', 'Year'])
+    .size()
+    .unstack(fill_value=0)
+)
 
-# Check the data types to confirm they are as expected
-print(combined_df.dtypes)  # This should show Year as int and ZIP_CD as object (string)
+# Step 2: Create columns with differences between years for each ZIP_CD
+# Calculate the differences between consecutive years
+active_hospitals_by_year['diff_2017_2016'] = active_hospitals_by_year["2017"] - \
+    active_hospitals_by_year["2016"]
+active_hospitals_by_year['diff_2018_2017'] = active_hospitals_by_year["2018"] - \
+    active_hospitals_by_year["2017"]
+active_hospitals_by_year['diff_2019_2018'] = active_hospitals_by_year["2019"] - \
+    active_hospitals_by_year["2018"]
 
-# Initialize list to store true closures
-true_closures = []
+# Reset index to prepare for merging
+active_hospitals_by_year = active_hospitals_by_year.reset_index()
 
-# Loop through each suspected closure
-for idx, row in suspected_closures_df.iterrows():
-    provider_num = row["Provider Number"]
-    zip_code = str(row["ZIP Code"])  # Convert ZIP code to string
-    year_closed = int(row["Year Closed"])  # Ensure closure year is an integer
-    
-    # Count active hospitals in the closure year and the year after
-    active_in_year = combined_df[(combined_df["ZIP_CD"] == zip_code) & 
-                                 (combined_df["Year"] == year_closed) & 
-                                 (combined_df["PGM_TRMNTN_CD"] == "00")].shape[0]
-    
-    active_in_next_year = combined_df[(combined_df["ZIP_CD"] == zip_code) & 
-                                      (combined_df["Year"] == (year_closed + 1)) & 
-                                      (combined_df["PGM_TRMNTN_CD"] == "00")].shape[0]
-    
-    # Keep closure if the number of active hospitals decreases
-    if active_in_next_year < active_in_year:
-        true_closures.append(row)
+# Step 3: Merge the active_hospitals_by_year dataframe with suspected_closures by ZIP Code
+merged_df = pd.merge(suspected_closures_df, active_hospitals_by_year,
+                     left_on='ZIP Code', right_on='ZIP_CD', how='left')
 
-# Convert true closures to DataFrame
-true_closures_df = pd.DataFrame(true_closures)
-num_true_closures = len(true_closures_df)
+# Initialize the closure_difference column with NaN
+merged_df['closure_difference'] = np.nan
 
-display(f"Total true hospital closures: {num_true_closures}")
-display(true_closures_df) 
+# Loop through each row and set closure_difference based on Year Closed
+for index, row in merged_df.iterrows():
+    if row['Year Closed'] == "2017":
+        merged_df.at[index, 'closure_difference'] = row['diff_2017_2016']
+    elif row['Year Closed'] == "2018":
+        merged_df.at[index, 'closure_difference'] = row['diff_2018_2017']
+    elif row['Year Closed'] == "2019":
+        merged_df.at[index, 'closure_difference'] = row['diff_2019_2018']
+    else:
+        # Optionally set it to a specific value if Year Closed doesn't match any condition
+        merged_df.at[index, 'closure_difference'] = None
+
+# Step 5: Create a dummy variable that is 1 if the closure_difference is 0 or greater, else 0
+merged_df['closure_dummy'] = merged_df['closure_difference'].apply(
+    lambda x: 1 if x is not None and x >= 0 else 0)
+
+# Count the number of rows where closure_dummy is 1
+count_of_ones = merged_df['closure_dummy'].sum()
+display(f"Number of rows with closure_dummy = 1: {count_of_ones}")
+
 
 ```
 
+
+
 ```{python}
-# a) Calculate the number of hospitals fitting the potential merger/acquisition definition
-num_potential_mergers = len(suspected_closures_df) - len(true_closures_df)
+# Question a: Count hospitals that fit the definition of potentially being a merger/acquisition
+potential_mergers = merged_df[merged_df['closure_dummy'] == 1]
+num_potential_mergers = potential_mergers.shape[0]
+display(f"Number of hospitals potentially being a merger/acquisition: {num_potential_mergers}")
 
-# b) Calculate the number of hospitals left after correcting for mergers/acquisitions
-num_corrected_closures = len(true_closures_df)
+# Question b: Count hospitals left after correcting for potential mergers
+corrected_closures = merged_df[merged_df['closure_dummy'] == 0]
+num_corrected_closures = corrected_closures.shape[0]
+display(f"Number of hospitals left after correcting for potential mergers: {num_corrected_closures}")
 
-# c) Sort the corrected list of closures by name and display the first 10 rows
-corrected_closures_sorted = true_closures_df.sort_values(by="Facility Name").head(10)
-
-# Display results
-display(f"Number of potential mergers/acquisitions: {num_potential_mergers}")
-display(f"Number of corrected closures: {num_corrected_closures}")
-display("Corrected closures sorted by Facility Name:")
-display(corrected_closures_sorted)
-
+# Question c: Sort the corrected list of closures by hospital name and display the first 10 rows
+sorted_corrected_closures = corrected_closures.sort_values(by='Facility Name').head(10)
+display(sorted_corrected_closures[['Facility Name', 'ZIP Code', 'Year Closed', 'closure_difference']])
 ```
 
 
 ## Download Census zip code shapefile (10 pt) 
 
-1. 
-    a.
-    b. 
-2. 
+
+
+
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
 1. 
 
+The GeoDataFrame, `zips_all_centroids`, has dimensions that correspond to the number of unique ZIP code areas, with two main columns: `ZIP Code` and `geometry`. The `ZIP Code` column holds the specific ZIP Code Tabulation Area (ZCTA) for each entry, representing each distinct postal region. The `geometry` column contains the centroid point of each ZIP code area, with each point indicating the latitude and longitude coordinates for the center of the ZIP code region. This structure allows for further geographic analysis, such as calculating distances to the nearest hospital.
+
 ```{python}
 import geopandas as gpd
+
+# Calculate centroids for each ZIP code and create a new GeoDataFrame with these centroids
+zip_shapefile['centroid'] = zip_shapefile.geometry.centroid  # Calculate centroids
+
+# Convert this information into a new GeoDataFrame, focusing only on the centroids and ZIP code info
+zips_all_centroids = gpd.GeoDataFrame(zip_shapefile[['ZCTA5', 'centroid']], geometry='centroid')
+
+# Rename columns for clarity
+zips_all_centroids.columns = ['ZIP Code', 'geometry']
+
+# Display the dimensions and column descriptions
+print("Dimensions of zips_all_centroids:", zips_all_centroids.shape)
+print("Columns in zips_all_centroids:", zips_all_centroids.columns)
+
+# Display the first few rows to verify the output
+zips_all_centroids.head()
+
 ```
 
 2. 
+
+```{python}
+
+# Define ZIP code prefixes for Texas and its neighboring states
+texas_prefixes = list(range(750, 799))
+# Adding neighboring state prefixes
+bordering_prefixes = texas_prefixes + [70, 71, 72, 73, 74, 87, 88]
+
+# Convert prefixes to strings for matching with the 'ZIP Code' column
+texas_prefixes_str = tuple(map(str, texas_prefixes))
+bordering_prefixes_str = tuple(map(str, bordering_prefixes))
+
+# Filter the zips_all_centroids GeoDataFrame for Texas ZIP codes
+zips_texas_centroids = zips_all_centroids[
+    zips_all_centroids['ZIP Code'].str.startswith(texas_prefixes_str)
+]
+
+# Filter the zips_all_centroids GeoDataFrame for Texas and bordering states ZIP codes
+zips_texas_borderstates_centroids = zips_all_centroids[
+    zips_all_centroids['ZIP Code'].str.startswith(bordering_prefixes_str)
+]
+
+# Print out the number of unique ZIP codes in each subset
+num_texas_zips = zips_texas_centroids['ZIP Code'].nunique()
+num_bordering_zips = zips_texas_borderstates_centroids['ZIP Code'].nunique()
+
+print("Unique ZIP codes in Texas subset:", num_texas_zips)
+print("Unique ZIP codes in Texas and bordering states subset:", num_bordering_zips)
+
+
+```
+
 3. 
+
+We used an inner join to retain only the ZIP codes in Texas and neighboring states that have at least one hospital, ensuring that `zips_withhospital_centroids` includes only relevant ZIP codes. The join was conducted on the `ZIP Code` column from `zips_texas_borderstates_centroids` and `ZIP_CD` from `zips_with_hospital`, allowing us to filter specifically for ZIP codes that had at least one active hospital in 2016. The result is a GeoDataFrame, `zips_withhospital_centroids`, which contains only the ZIP codes in Texas or bordering states with at least one hospital in that year.
+
+```{python}
+
+# Step 1: Filter hospitals active in 2016 and count by ZIP code
+
+hospitals_per_zip = combined_df[(combined_df['Year'] == 2016) & (
+    combined_df['PGM_TRMNTN_CD'] == "00")].groupby('ZIP_CD').size().reset_index(name='hospital_count')
+
+
+# Filter to keep only ZIP codes with at least one hospital
+zips_with_hospital = hospitals_per_zip[hospitals_per_zip['hospital_count'] > 0]
+
+# Step 2: Merge this count data with zips_texas_borderstates_centroids on ZIP code
+# Ensuring ZIP codes match data types between datasets
+zips_texas_borderstates_centroids['ZIP Code'] = zips_texas_borderstates_centroids['ZIP Code'].astype(
+    str)
+zips_with_hospital['ZIP_CD'] = zips_with_hospital['ZIP_CD'].astype(str)
+
+# Perform an inner join to keep only ZIP codes with hospitals in 2016
+zips_withhospital_centroids = zips_texas_borderstates_centroids.merge(
+    zips_with_hospital, left_on='ZIP Code', right_on='ZIP_CD', how='inner'
+)
+
+# Display
+display(zips_withhospital_centroids.head())
+
+```
+
+
 4. 
     a.
+
+```{python}
+from shapely.ops import nearest_points
+import time
+
+# The geometry column is set as active in both GeoDataFrames
+zips_texas_centroids = zips_texas_centroids.set_geometry('geometry')
+zips_withhospital_centroids = zips_withhospital_centroids.set_geometry('geometry')
+
+# Subset to 10 ZIP codes from zips_texas_centroids for testing
+test_zips_texas = zips_texas_centroids.head(10)
+
+# Start timer
+start_time = time.time()
+
+# Calculate distances for each ZIP code in test subset
+distances = []
+for idx, row in test_zips_texas.iterrows():
+    # Calculate the distance to the nearest hospital ZIP code
+    nearest_hospital = zips_withhospital_centroids.distance(row.geometry).min()
+    distances.append(nearest_hospital)
+
+# End timer
+end_time = time.time()
+elapsed_time = end_time - start_time
+
+# Output the time taken and estimated total time for the full dataset
+print("Time taken for 10 ZIP codes:", elapsed_time, "seconds")
+
+# Estimate total time 
+total_rows = len(zips_texas_centroids)
+estimated_total_time = (elapsed_time / 10) * total_rows
+print("Estimated time for entire dataset:", estimated_total_time, "seconds")
+
+```
+
     b.
+
+The full dataset calculation completed significantly faster than initially estimated, suggesting that the small sample used for estimation might have over-predicted the time required. This difference could be due to optimizations in the spatial library that enhance performance with larger datasets, as well as variations in system performance between runs. Small sample estimates can sometimes lead to overestimations when the operation scales more efficiently across a larger volume of data. 
+
+```{python}
+import time
+
+# Start timer for the full calculation
+start_time_full = time.time()
+
+# Calculate distances for each ZIP code in the entire Texas subset
+full_distances = []
+for idx, row in zips_texas_centroids.iterrows():
+    # Calculate the distance to the nearest hospital ZIP code
+    nearest_hospital_distance = zips_withhospital_centroids.distance(row.geometry).min()
+    full_distances.append(nearest_hospital_distance)
+
+# End timer
+end_time_full = time.time()
+elapsed_time_full = end_time_full - start_time_full
+
+# Output the actual time taken
+print("Actual time taken for full dataset:", elapsed_time_full, "seconds")
+
+# Compare to estimated time from previous step
+estimated_total_time = (elapsed_time / 10) * len(zips_texas_centroids)  # Using the previous subset estimate
+print("Estimated time for entire dataset:", estimated_total_time, "seconds")
+print("Difference between actual and estimated time:", abs(elapsed_time_full - estimated_total_time), "seconds")
+
+
+```
+
     c.
 5. 
     a.
