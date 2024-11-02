@@ -54,7 +54,7 @@
         "\n",
         "1. \n"
       ],
-      "id": "6bc464c1"
+      "id": "c7e21cfa"
     },
     {
       "cell_type": "code",
@@ -109,7 +109,7 @@
         "\n",
         "df.to_csv(\"pos2016.csv\", index=False)\n"
       ],
-      "id": "a97ee317",
+      "id": "776a769d",
       "execution_count": null,
       "outputs": []
     },
@@ -119,7 +119,7 @@
       "source": [
         "2. "
       ],
-      "id": "d66e54f7"
+      "id": "cc292fbe"
     },
     {
       "cell_type": "code",
@@ -138,7 +138,7 @@
         "\n",
         "print(df_st_hospitals)"
       ],
-      "id": "aeb0e294",
+      "id": "f9696925",
       "execution_count": null,
       "outputs": []
     },
@@ -154,7 +154,7 @@
         "\n",
         "3. \n"
       ],
-      "id": "e0333e17"
+      "id": "25e0c28b"
     },
     {
       "cell_type": "code",
@@ -230,7 +230,7 @@
         "\n",
         "print(f\"Total records retrieved across all years: {combined_df.shape[0]}\")"
       ],
-      "id": "9d3831c6",
+      "id": "9e0d2808",
       "execution_count": null,
       "outputs": []
     },
@@ -278,7 +278,7 @@
         "# Observations per year may be higher due to multiple records for the same hospital.\n",
         "# Unique hospitals per year give an idea of how many distinct hospitals are in the dataset for each year."
       ],
-      "id": "a0d1d55b",
+      "id": "2ade4ad4",
       "execution_count": null,
       "outputs": []
     },
@@ -294,7 +294,7 @@
         "\n",
         "1. Termination code equal to 00=ACTIVE PROVIDER. The data contain only up to the code 07. The other codes apply to CLIA. \n"
       ],
-      "id": "06ef0afe"
+      "id": "5df7aa57"
     },
     {
       "cell_type": "code",
@@ -333,7 +333,7 @@
         "display(f\"Total suspected hospital closures: {num_closures}\")\n",
         "display(suspected_closures_df.head()) \n"
       ],
-      "id": "8a77ecd3",
+      "id": "89bdf1f6",
       "execution_count": null,
       "outputs": []
     },
@@ -343,7 +343,7 @@
       "source": [
         "2. \n"
       ],
-      "id": "a2075211"
+      "id": "d6ee11e8"
     },
     {
       "cell_type": "code",
@@ -355,7 +355,7 @@
         "\n",
         "display(top_10_closures)"
       ],
-      "id": "7138cc74",
+      "id": "917582a6",
       "execution_count": null,
       "outputs": []
     },
@@ -365,7 +365,7 @@
       "source": [
         "3. \n"
       ],
-      "id": "61e669fa"
+      "id": "40b0d3c5"
     },
     {
       "cell_type": "code",
@@ -424,7 +424,7 @@
         "count_of_zeros = (merged_df['closure_dummy'] == 0).sum()\n",
         "display(f\"Number of rows with closure_dummy = 0: {count_of_zeros}\")\n"
       ],
-      "id": "7bdffa3b",
+      "id": "0ea2fc7c",
       "execution_count": null,
       "outputs": []
     },
@@ -445,7 +445,7 @@
         "sorted_corrected_closures = corrected_closures.sort_values(by='Facility Name').head(10)\n",
         "display(sorted_corrected_closures[['Facility Name', 'ZIP Code', 'Year Closed', 'closure_difference']])"
       ],
-      "id": "6eefdf1b",
+      "id": "edb1c7e9",
       "execution_count": null,
       "outputs": []
     },
@@ -481,7 +481,7 @@
         "\n",
         "2. \n"
       ],
-      "id": "675629ca"
+      "id": "59f747bd"
     },
     {
       "cell_type": "code",
@@ -520,7 +520,7 @@
         "ax.axis('off')\n",
         "plt.show()\n"
       ],
-      "id": "cd68f88c",
+      "id": "395dfb5c",
       "execution_count": null,
       "outputs": []
     },
@@ -534,7 +534,7 @@
         "\n",
         "The GeoDataFrame, `zips_all_centroids`, has dimensions that correspond to the number of unique ZIP code areas, with two main columns: `ZIP Code` and `geometry`. The `ZIP Code` column holds the specific ZIP Code Tabulation Area (ZCTA) for each entry, representing each distinct postal region. The `geometry` column contains the centroid point of each ZIP code area, with each point indicating the latitude and longitude coordinates for the center of the ZIP code region. This structure allows for further geographic analysis, such as calculating distances to the nearest hospital.\n"
       ],
-      "id": "99af99fd"
+      "id": "32e87eb6"
     },
     {
       "cell_type": "code",
@@ -558,7 +558,7 @@
         "# Display the first few rows to verify the output\n",
         "zips_all_centroids.head()"
       ],
-      "id": "1232539f",
+      "id": "d8b6c6d8",
       "execution_count": null,
       "outputs": []
     },
@@ -568,7 +568,7 @@
       "source": [
         "2. \n"
       ],
-      "id": "a8a16d35"
+      "id": "423a444c"
     },
     {
       "cell_type": "code",
@@ -600,7 +600,7 @@
         "print(\"Unique ZIP codes in Texas subset:\", num_texas_zips)\n",
         "print(\"Unique ZIP codes in Texas and bordering states subset:\", num_bordering_zips)\n"
       ],
-      "id": "4d6b11d1",
+      "id": "c8a2f3f0",
       "execution_count": null,
       "outputs": []
     },
@@ -612,7 +612,7 @@
         "\n",
         "We used an inner join to retain only the ZIP codes in Texas and neighboring states that have at least one hospital, ensuring that `zips_withhospital_centroids` includes only relevant ZIP codes. The join was conducted on the `ZIP Code` column from `zips_texas_borderstates_centroids` and `ZIP_CD` from `zips_with_hospital`, allowing us to filter specifically for ZIP codes that had at least one active hospital in 2016. The result is a GeoDataFrame, `zips_withhospital_centroids`, which contains only the ZIP codes in Texas or bordering states with at least one hospital in that year.\n"
       ],
-      "id": "42a730f4"
+      "id": "9923f279"
     },
     {
       "cell_type": "code",
@@ -641,7 +641,7 @@
         "# Display\n",
         "display(zips_withhospital_centroids.head())"
       ],
-      "id": "16e95582",
+      "id": "2a0941c7",
       "execution_count": null,
       "outputs": []
     },
@@ -652,7 +652,7 @@
         "4. \n",
         "    a.\n"
       ],
-      "id": "ee7b20d4"
+      "id": "768ab3b2"
     },
     {
       "cell_type": "code",
@@ -690,7 +690,7 @@
         "estimated_total_time = (elapsed_time / 10) * total_rows\n",
         "print(\"Estimated time for entire dataset:\", estimated_total_time, \"seconds\")"
       ],
-      "id": "b2430611",
+      "id": "634684fc",
       "execution_count": null,
       "outputs": []
     },
@@ -701,7 +701,7 @@
         "    b.\n",
         "The full dataset calculation completed significantly faster than initially estimated, suggesting that the small sample used for estimation might have over-predicted the time required. This difference could be due to optimizations in the spatial library that enhance performance with larger datasets, as well as variations in system performance between runs. Small sample estimates can sometimes lead to overestimations when the operation scales more efficiently across a larger volume of data. \n"
       ],
-      "id": "8b0cae2f"
+      "id": "fcde6a51"
     },
     {
       "cell_type": "code",
@@ -731,7 +731,7 @@
         "print(\"Estimated time for entire dataset:\", estimated_total_time, \"seconds\")\n",
         "print(\"Difference between actual and estimated time:\", abs(elapsed_time_full - estimated_total_time), \"seconds\")\n"
       ],
-      "id": "64ec9e11",
+      "id": "646c5b7c",
       "execution_count": null,
       "outputs": []
     },
@@ -750,7 +750,7 @@
         "\n",
         " The distances are converted from degrees to miles.\n"
       ],
-      "id": "6720c06a"
+      "id": "ce6ac0ed"
     },
     {
       "cell_type": "code",
@@ -773,7 +773,7 @@
         "print(\"Average distance to the nearest hospital (in degrees):\", avg_dist_degrees)\n",
         "print(\"Average distance to the nearest hospital (in miles):\", avg_dist_miles)"
       ],
-      "id": "7401071b",
+      "id": "407c7c22",
       "execution_count": null,
       "outputs": []
     },
@@ -783,7 +783,7 @@
       "source": [
         "   b.\n"
       ],
-      "id": "bd5c4738"
+      "id": "b8cc202d"
     },
     {
       "cell_type": "code",
@@ -800,7 +800,7 @@
         "ax.set_ylabel(\"Latitude\")\n",
         "plt.show()"
       ],
-      "id": "804fdd93",
+      "id": "d6f120e0",
       "execution_count": null,
       "outputs": []
     },
@@ -815,7 +815,7 @@
         "\n",
         "1. \n"
       ],
-      "id": "1d1a7d4f"
+      "id": "ab99c5ef"
     },
     {
       "cell_type": "code",
@@ -833,7 +833,7 @@
         "# Display the result\n",
         "closures_by_zipcode"
       ],
-      "id": "9ddafae9",
+      "id": "47657f42",
       "execution_count": null,
       "outputs": []
     },
@@ -843,7 +843,7 @@
       "source": [
         "2. \n"
       ],
-      "id": "4c771456"
+      "id": "c06afd69"
     },
     {
       "cell_type": "code",
@@ -879,7 +879,7 @@
         "ax.set_axis_off()\n",
         "plt.show()"
       ],
-      "id": "dce80447",
+      "id": "097e25e2",
       "execution_count": null,
       "outputs": []
     },
@@ -892,7 +892,7 @@
         "\n",
         "## Reflecting on the exercise (10 pts) "
       ],
-      "id": "f67b63f7"
+      "id": "1b3fa63e"
     }
   ],
   "metadata": {
