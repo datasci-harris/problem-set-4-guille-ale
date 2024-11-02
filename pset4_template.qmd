@@ -342,10 +342,8 @@ merged_df['closure_difference'] = np.nan
 # Loop through each row and set closure_difference based on Year Closed
 for index, row in merged_df.iterrows():
     if row['Year Closed'] == "2017":
-        merged_df.at[index, 'closure_difference'] = row['diff_2017_2016']
-    elif row['Year Closed'] == "2018":
         merged_df.at[index, 'closure_difference'] = row['diff_2018_2017']
-    elif row['Year Closed'] == "2019":
+    elif row['Year Closed'] == "2018":
         merged_df.at[index, 'closure_difference'] = row['diff_2019_2018']
     else:
         # Optionally set it to a specific value if Year Closed doesn't match any condition
@@ -353,27 +351,30 @@ for index, row in merged_df.iterrows():
 
 # Step 5: Create a dummy variable that is 1 if the closure_difference is 0 or greater, else 0
 merged_df['closure_dummy'] = merged_df['closure_difference'].apply(
-    lambda x: 1 if x is not None and x >= 0 else 0)
+    lambda x: 1 if pd.notna(x) and x > 0 else (0 if pd.notna(x) else np.nan)
+)
 
 # Count the number of rows where closure_dummy is 1
 count_of_ones = merged_df['closure_dummy'].sum()
 display(f"Number of rows with closure_dummy = 1: {count_of_ones}")
 
+# Count the number of rows where closure_dummy is 0
+count_of_zeros = (merged_df['closure_dummy'] == 0).sum()
+display(f"Number of rows with closure_dummy = 0: {count_of_zeros}")
+
 
 ```
 
 
-
 ```{python}
 # Question a: Count hospitals that fit the definition of potentially being a merger/acquisition
-potential_mergers = merged_df[merged_df['closure_dummy'] == 1]
-num_potential_mergers = potential_mergers.shape[0]
-display(f"Number of hospitals potentially being a merger/acquisition: {num_potential_mergers}")
+count_of_ones = merged_df['closure_dummy'].sum()
+display(f"Number of hospitals potentially being a merger/acquisition: {count_of_ones}")
 
 # Question b: Count hospitals left after correcting for potential mergers
 corrected_closures = merged_df[merged_df['closure_dummy'] == 0]
-num_corrected_closures = corrected_closures.shape[0]
-display(f"Number of hospitals left after correcting for potential mergers: {num_corrected_closures}")
+count_of_zeros = (merged_df['closure_dummy'] == 0).sum()
+display(f"Number of hospitals left after correcting for potential mergers: {count_of_zeros}")
 
 # Question c: Sort the corrected list of closures by hospital name and display the first 10 rows
 sorted_corrected_closures = corrected_closures.sort_values(by='Facility Name').head(10)
