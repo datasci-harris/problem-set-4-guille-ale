@@ -84,20 +84,14 @@ while True:
     url = base_url.format(uuid=uuid)
     response = requests.get(url, params=params)
 
-    if response.status_code != 200:
-        print(f"Error: {response.status_code}, {response.text}")
-        break
+
 
     data = response.json()
 
-    if not data:
-        print("No more data available.")
-        break
-
+ 
     all_data.extend(data)
 
     offset += limit
-    print(f"Fetched {len(data)} rows, moving to next batch...")
 
 df = pd.DataFrame(all_data)
 
@@ -384,7 +378,68 @@ display(sorted_corrected_closures[['Facility Name', 'ZIP Code', 'Year Closed', '
 
 ## Download Census zip code shapefile (10 pt) 
 
+1. 
+    a. **Five File Types and Their Contents**
 
+Based on the files provided, here is a summary of the five common shapefile-related formats and their typical contents:
+
+1. **`.shp` (Shapefile)**: Stores the geometry of the feature, such as points, lines, or polygons representing geographic boundaries (e.g., ZIP code tabulation areas) (6.4 MB).
+2. **`.shx` (Shape Index)**: Contains an index of the feature geometry, providing quick access to spatial data in the `.shp` file (165 bytes).
+3. **`.dbf` (Database File)**: Stores attribute data associated with each shape, such as names, identifiers, and other relevant information (837.5 MB).
+4. **`.prj` (Projection File)**: Contains projection information, specifying the coordinate system and projection details for the spatial data (265 KB).
+5. **`.xml` (Metadata File)**: Provides metadata, including details about the data's origin, purpose, spatial extent, and additional descriptive information (16 KB).
+
+    b. **File Sizes After Unzipping**
+
+The sizes of the files were included above. However, to determine the size of each file after unzipping, use the following command in the terminal of the folder:
+
+
+total 1648944
+-rw-r--r--@ 1 aosilva  staff   6.1M Sep 14  2011 gz_2010_us_860_00_500k.dbf
+-rw-r--r--@ 1 aosilva  staff   165B Sep 14  2011 gz_2010_us_860_00_500k.prj
+-rw-r--r--@ 1 aosilva  staff   799M Sep 14  2011 gz_2010_us_860_00_500k.shp
+-rw-r--r--@ 1 aosilva  staff   259K Sep 14  2011 gz_2010_us_860_00_500k.shx
+-rw-rw-rw-@ 1 aosilva  staff    15K Dec  9  2011 gz_2010_us_860_00_500k
+
+
+2. 
+
+```{python}
+import geopandas as gpd
+
+# Load the shapefile (replace 'path_to_shapefile' with the actual path)
+zip_shapefile = gpd.read_file('gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp')
+
+# Filter for Texas ZIP codes (750-799)
+texas_zip_shapefile = zip_shapefile[zip_shapefile['ZCTA5'].str.startswith(tuple(map(str, range(750, 799))))]
+
+# Check the result
+texas_zip_shapefile.head()
+
+# Filter combined_df for 2016 and Texas ZIP codes
+hospitals_2016 = combined_df[(combined_df['Year'] == 2016) & 
+                             (combined_df['ZIP_CD'].str.startswith(tuple(map(str, range(750, 799)))))]
+
+# Count hospitals per ZIP code
+hospitals_per_zip = hospitals_2016.groupby('ZIP_CD').size().reset_index(name='hospital_count')
+
+# Merge shapefile with hospital counts
+texas_zip_map = texas_zip_shapefile.merge(hospitals_per_zip, left_on='ZCTA5', right_on='ZIP_CD', how='left')
+
+# Fill NaN values with 0 for ZIP codes with no hospitals
+texas_zip_map['hospital_count'] = texas_zip_map['hospital_count'].fillna(0)
+
+import matplotlib.pyplot as plt
+
+# Plot the choropleth
+fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+texas_zip_map.plot(column='hospital_count', cmap='YlGnBu', linewidth=0.8, ax=ax, edgecolor='0.8', legend=True)
+ax.set_title('Number of Hospitals by ZIP Code in Texas (2016)')
+ax.axis('off')
+plt.show()
+
+
+```
 
 
 
@@ -517,6 +572,7 @@ estimated_total_time = (elapsed_time / 10) * total_rows
 print("Estimated time for entire dataset:", estimated_total_time, "seconds")
 
 ```
+   
     b.
 The full dataset calculation completed significantly faster than initially estimated, suggesting that the small sample used for estimation might have over-predicted the time required. This difference could be due to optimizations in the spatial library that enhance performance with larger datasets, as well as variations in system performance between runs. Small sample estimates can sometimes lead to overestimations when the operation scales more efficiently across a larger volume of data. 
 
@@ -549,15 +605,108 @@ print("Difference between actual and estimated time:", abs(elapsed_time_full - e
 ```
 
     c.
+
+In the `.prj` file , the unit is degrees. This indicates that the geographic data is in a coordinate system based on latitude and longitude, with units in angular degrees rather than linear distance. 
+
+To convert degrees to miles, we can use an approximate conversion. Each degree of latitude corresponds to about 69 miles, a consistent value because latitude lines are parallel. For longitude, the conversion varies depending on latitude due to the Earth’s curvature; at the equator, 1 degree of longitude equals approximately 69 miles, but this distance decreases as you move toward the poles. A common formula to estimate the distance per degree of longitude at a given latitude L  is  69 x cos(L) . 
+
 5. 
     a.
-    b.
-    c.
-    
+
+ The distances are converted from degrees to miles.
+
+```{python}
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+# Calculate the distance to the nearest hospital for each ZIP code in Texas
+zips_texas_centroids['nearest_hospital_distance'] = zips_texas_centroids.geometry.apply(
+    lambda x: zips_withhospital_centroids.distance(x).min()
+)
+
+# Step 2: Calculate the average distance (in degrees)
+avg_dist_degrees = zips_texas_centroids['nearest_hospital_distance'].mean()
+
+# Step 3: Convert average distance from degrees to miles
+avg_dist_miles = avg_dist_degrees * 69  # 1 degree ≈ 69 miles
+
+print("Average distance to the nearest hospital (in degrees):", avg_dist_degrees)
+print("Average distance to the nearest hospital (in miles):", avg_dist_miles)
+```
+
+   b.
+
+```{python}
+# Step 4: Map the value for each ZIP code in Texas
+# Convert each ZIP code's distance to miles for mapping
+zips_texas_centroids['nearest_hospital_distance_miles'] = zips_texas_centroids['nearest_hospital_distance'] * 69
+
+fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+zips_texas_centroids.plot(column='nearest_hospital_distance_miles', cmap='coolwarm', legend=True, ax=ax)
+ax.set_title("Distance to Nearest Hospital for Each ZIP Code in Texas (Miles)")
+ax.set_xlabel("Longitude")
+ax.set_ylabel("Latitude")
+plt.show()
+```
+
+The choropleth map visually represents the distance to the nearest hospital for each ZIP code in Texas, showing regions with greater or lesser hospital access.
+
 ## Effects of closures on access in Texas (15 pts)
 
+
 1. 
+
+```{python}
+
+# Filter for Texas ZIP codes in the range 75000 to 79999 and for closures between 2016 and 2019
+texas_closures = corrected_closures[
+    (corrected_closures['ZIP Code'].astype(str).str.startswith(tuple(map(str, range(750, 799))))) & 
+    (corrected_closures['Year Closed'].between("2016", "2019"))
+]
+
+# Group by ZIP Code and count the number of closures for each ZIP code
+closures_by_zipcode = texas_closures.groupby('ZIP Code').size().reset_index(name='Number of Closures')
+
+# Display the result
+closures_by_zipcode
+
+```
+
 2. 
+
+```{python}
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+# Load the ZIP code shapefile
+zip_shapefile = gpd.read_file('gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp')
+
+# Filter for Texas ZIP codes (ZIP codes starting with 750-799)
+zip_shapefile = zip_shapefile[zip_shapefile['ZCTA5'].str.startswith(tuple(map(str, range(750, 800))))]
+
+# Ensure ZIP code columns are strings for matching
+zip_shapefile['ZCTA5'] = zip_shapefile['ZCTA5'].astype(str)
+closures_by_zipcode['ZIP Code'] = closures_by_zipcode['ZIP Code'].astype(str)
+
+# Merge the shapefile with closures data on ZIP code
+texas_zip_closures = zip_shapefile.merge(closures_by_zipcode, left_on='ZCTA5', right_on='ZIP Code', how='left')
+
+# Replace NaN values in 'Number of Closures' with 0 for ZIP codes without closures
+texas_zip_closures['Number of Closures'] = texas_zip_closures['Number of Closures'].fillna(0)
+
+# Count the number of directly affected ZIP codes (where Number of Closures > 0)
+affected_zip_count = texas_zip_closures[texas_zip_closures['Number of Closures'] > 0].shape[0]
+print(f"Number of directly affected ZIP codes in Texas: {affected_zip_count}")
+
+# Plot the choropleth map
+fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+texas_zip_closures.plot(column='Number of Closures', cmap='YlGnBu', linewidth=0.8, ax=ax, edgecolor='0.8', legend=True)
+ax.set_title('Texas ZIP Codes Directly Affected by Hospital Closures (2016-2019)')
+ax.set_axis_off()
+plt.show()
+
+```
+
 3. 
 4. 
 
