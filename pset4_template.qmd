@@ -52,6 +52,7 @@ Please refer to the minilesson on code style
 import requests
 import pandas as pd
 import altair as alt
+import numpy as np
 
 base_url = "https://data.cms.gov/data-api/v1/dataset/{uuid}/data"
 uuid = "96ba2257-2080-49c1-9e5b-7726f9f83cad"
@@ -202,8 +203,6 @@ print(f"Total records retrieved across all years: {combined_df.shape[0]}")
 ```
 
 ```{python}
-import altair as alt
-
 # Plotting Number of Observations Per Year
 
 combined_year_df = combined_df.groupby("Year").size().reset_index(name="Number of Observations")
@@ -217,8 +216,12 @@ obs_chart = alt.Chart(combined_year_df).mark_bar().encode(
 )
 
 obs_chart.display()
+```
 
-
+4. 
+    a.
+  
+```{python}
 # Plotting Number of Unique Hospitals Per Year
 unique_hospitals = combined_df.groupby("Year")["PRVDR_NUM"].nunique().reset_index(name="Number of Unique Hospitals")
 
@@ -233,19 +236,18 @@ unique_hospitals_chart = alt.Chart(unique_hospitals).mark_bar().encode(
 unique_hospitals_chart.display()
 
 
-#print("Observations Per Year:")
-#print(observations_per_year)
-#print("\nUnique Hospitals Per Year:")
-#print(unique_hospitals_per_year)
+print("Observations Per Year:")
+print(combined_year_df)
+print("\nUnique Hospitals Per Year:")
+print(unique_hospitals)
 
-# Compare the two plots to understand the structure of the data.
-# Observations per year may be higher due to multiple records for the same hospital.
-# Unique hospitals per year give an idea of how many distinct hospitals are in the dataset for each year.
 
 ```
-4. 
-    a.
-    b.
+
+    b. 
+    
+Since the number of observations equals the number of unique hospitals, it suggests that the data is clean and does not contain repeated entries for hospitals within the same year. Each hospital appears only once per year, simplifying analysis.
+
 
 ## Identify hospital closures in POS file (15 pts) (*)
 
@@ -259,7 +261,7 @@ inactive_codes = ["01", "02", "03", "04", "05", "06", "07"]
 
 active_2016 = combined_df[(combined_df["Year"] == "2016") & (combined_df["PGM_TRMNTN_CD"] == "00")]
 
-print(active_2016.head())
+#print(active_2016.head())
 
 suspected_closures = []
 
@@ -284,7 +286,7 @@ suspected_closures_df = pd.DataFrame(suspected_closures)
 num_closures = len(suspected_closures_df)
 
 display(f"Total suspected hospital closures: {num_closures}")
-display(suspected_closures_df.head()) 
+#display(suspected_closures_df.head()) 
 
 
 ```
@@ -303,8 +305,6 @@ display(top_10_closures)
 3. 
 
 ```{python}
-import pandas as pd
-import numpy as np
 
 # Step 1: Count the number of active hospitals (PGM_TRMNTN_CD == "00") by ZIP_CD (zip code) for each year
 active_hospitals_by_year = (
@@ -511,7 +511,7 @@ We used an inner join to retain only the ZIP codes in Texas and neighboring stat
 
 # Step 1: Filter hospitals active in 2016 and count by ZIP code
 
-hospitals_per_zip = combined_df[(combined_df['Year'] == 2016) & (
+hospitals_per_zip = combined_df[(combined_df['Year'] == "2016") & (
     combined_df['PGM_TRMNTN_CD'] == "00")].groupby('ZIP_CD').size().reset_index(name='hospital_count')
 
 
@@ -612,8 +612,7 @@ To convert degrees to miles, we can use an approximate conversion. Each degree o
 
 5. 
     a.
-
- The distances are converted from degrees to miles.
+ The distances are converted from degrees to miles by multiplying 69 times.
 
 ```{python}
 import geopandas as gpd
@@ -633,6 +632,7 @@ avg_dist_miles = avg_dist_degrees * 69  # 1 degree ≈ 69 miles
 print("Average distance to the nearest hospital (in degrees):", avg_dist_degrees)
 print("Average distance to the nearest hospital (in miles):", avg_dist_miles)
 ```
+An average distance of around 15 miles aligns with expectations, especially given Texas’s mix of densely populated cities and sparsely populated rural regions. 
 
    b.
 
@@ -649,10 +649,9 @@ ax.set_ylabel("Latitude")
 plt.show()
 ```
 
-The choropleth map visually represents the distance to the nearest hospital for each ZIP code in Texas, showing regions with greater or lesser hospital access.
+The choropleth map visually represents the distance to the nearest hospital for each ZIP code in Texas. This map highlights the healthcare access disparity between urban and rural regions in Texas. Rural areas, especially in western Texas, may face challenges in timely access to healthcare due to the greater distances to hospitals, which aligns with the calculated average distance. 
 
 ## Effects of closures on access in Texas (15 pts)
-
 
 1. 
 
@@ -708,6 +707,81 @@ plt.show()
 ```
 
 3. 
+
+```{python}
+import geopandas as gpd
+from shapely.geometry import Point
+import matplotlib.pyplot as plt
+
+# Step 1: Filter for directly affected ZIP codes
+directly_affected_zips = texas_zip_closures[texas_zip_closures['Number of Closures'] > 0]
+
+# Convert Texas ZIP code coordinates to the appropriate projection for distance calculations
+# Project the GeoDataFrame to a projection that uses meters (such as EPSG: 3395 or EPSG: 3857)
+zip_shapefile = zip_shapefile.to_crs(epsg=3395)
+directly_affected_zips = directly_affected_zips.to_crs(epsg=3395)
+
+# Step 2: Create a 10-mile (approximately 16093.4 meters) buffer around each directly affected ZIP code
+directly_affected_zips['buffer'] = directly_affected_zips.geometry.buffer(16093.4)  # 10 miles in meters
+
+# Step 3: Create a GeoDataFrame containing only the buffers and set it to use the 'buffer' column as geometry
+buffers_gdf = gpd.GeoDataFrame(directly_affected_zips, geometry='buffer')
+
+# Step 4: Spatial join with the overall Texas ZIP code shapefile to find ZIP codes within the 10-mile buffer
+# Note: The spatial join will match any ZIP code whose centroid falls within the buffer area
+indirectly_affected_zips = gpd.sjoin(zip_shapefile, buffers_gdf, how="inner", predicate="intersects")
+
+# Step 5: Count the number of unique indirectly affected ZIP codes
+indirectly_affected_zip_count = indirectly_affected_zips['ZCTA5_left'].nunique()
+
+print(f"Number of indirectly affected ZIP codes in Texas: {indirectly_affected_zip_count}")
+
+
+```
+
+Number of indirectly affected ZIP codes in Texas: 359
+
 4. 
+```{python}
+
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+# Step 1: Start with all Texas ZIP codes
+texas_zip_codes = zip_shapefile.to_crs(buffers_gdf.crs)
+
+# Step 2: Create the categories
+texas_zip_codes['Category'] = 'Not Affected'
+
+texas_zip_codes.loc[texas_zip_codes['ZCTA5'].isin(directly_affected_zips['ZCTA5']), 'Category'] = 'Directly Affected'
+
+texas_zip_codes.loc[
+    (texas_zip_codes['ZCTA5'].isin(indirectly_affected_zips['ZCTA5_left'])) &
+    (texas_zip_codes['Category'] != 'Directly Affected'), 'Category'
+] = 'Indirectly Affected'
+
+# Step 3: Plot the choropleth map
+fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+
+category_colors = {'Not Affected': 'lightgrey', 'Directly Affected': 'red', 'Indirectly Affected': 'orange'}
+
+texas_zip_codes.plot(column='Category', cmap='Set1', legend=True, ax=ax,
+                     edgecolor='black', linewidth=0.2)
+
+ax.set_title('Impact of Hospital Closures on Texas ZIP Codes (2016-2019)')
+ax.set_axis_off()
+plt.show()
+```
+
 
 ## Reflecting on the exercise (10 pts) 
+
+1. 
+
+The "first-pass" method we used to identify hospital closures based on termination codes and date ranges has several limitations that could lead to inaccuracies. One issue is that data reporting may be delayed or incomplete, meaning closures might not appear immediately or could be misrepresented if a hospital has only temporarily closed. Changes in ownership, mergers, or rebranding may also trigger termination codes without representing an actual closure, which could result in false positives. Additionally, temporary closures, such as those for renovations or emergencies, may appear as permanent in the dataset if not properly labeled. Data inconsistencies, such as incomplete or varying codes, further complicate closure identification and could lead to missed closures or errors. Finally, using only ZIP codes to identify closures doesn’t account for nearby hospitals that may still serve the affected area, thus misrepresenting the impact. To improve accuracy, we could cross-reference with external sources like health department records or news reports, validate closure status over multiple years, and incorporate additional details such as ownership changes, closure duration, and geographic proximity to other hospitals.
+
+2. 
+
+The current approach of identifying ZIP codes affected by hospital closures, based on direct closures within a ZIP code or proximity within a 10-mile radius, provides a basic assessment of hospital access changes. However, this method has limitations. For example, it assumes that a 10-mile distance is equally impactful across all areas, which may not hold true. In rural regions, a 10-mile distance may indeed indicate a significant gap in access, but in urban areas, other hospitals within a short distance may still provide adequate coverage, making the closure less impactful. This method also doesn’t consider population density or specific transportation factors that influence actual access to healthcare services.
+
+To improve this measure, one approach could be to adjust the buffer distance based on urban or rural classification, using a smaller radius for urban areas and a larger one for rural ones. Additionally, measuring travel time or distance based on road networks rather than a simple radius would give a more accurate reflection of access. Another refinement could involve considering hospital capacity, as some hospitals may not be able to handle increased demand from nearby closures, further affecting access.

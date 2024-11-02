@@ -54,7 +54,7 @@
         "\n",
         "1. \n"
       ],
-      "id": "c7e21cfa"
+      "id": "105675a2"
     },
     {
       "cell_type": "code",
@@ -63,6 +63,7 @@
         "import requests\n",
         "import pandas as pd\n",
         "import altair as alt\n",
+        "import numpy as np\n",
         "\n",
         "base_url = \"https://data.cms.gov/data-api/v1/dataset/{uuid}/data\"\n",
         "uuid = \"96ba2257-2080-49c1-9e5b-7726f9f83cad\"\n",
@@ -109,7 +110,7 @@
         "\n",
         "df.to_csv(\"pos2016.csv\", index=False)\n"
       ],
-      "id": "776a769d",
+      "id": "a18b1367",
       "execution_count": null,
       "outputs": []
     },
@@ -119,7 +120,7 @@
       "source": [
         "2. "
       ],
-      "id": "cc292fbe"
+      "id": "21ef408d"
     },
     {
       "cell_type": "code",
@@ -138,7 +139,7 @@
         "\n",
         "print(df_st_hospitals)"
       ],
-      "id": "f9696925",
+      "id": "3589c08c",
       "execution_count": null,
       "outputs": []
     },
@@ -154,7 +155,7 @@
         "\n",
         "3. \n"
       ],
-      "id": "25e0c28b"
+      "id": "cb3ade7b"
     },
     {
       "cell_type": "code",
@@ -230,7 +231,7 @@
         "\n",
         "print(f\"Total records retrieved across all years: {combined_df.shape[0]}\")"
       ],
-      "id": "9e0d2808",
+      "id": "82b75770",
       "execution_count": null,
       "outputs": []
     },
@@ -238,8 +239,6 @@
       "cell_type": "code",
       "metadata": {},
       "source": [
-        "import altair as alt\n",
-        "\n",
         "# Plotting Number of Observations Per Year\n",
         "\n",
         "combined_year_df = combined_df.groupby(\"Year\").size().reset_index(name=\"Number of Observations\")\n",
@@ -252,9 +251,25 @@
         "    title=\"Number of Observations Per Year\"\n",
         ")\n",
         "\n",
-        "obs_chart.display()\n",
-        "\n",
-        "\n",
+        "obs_chart.display()"
+      ],
+      "id": "af0fbf6a",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "4. \n",
+        "    a.\n"
+      ],
+      "id": "d3dbd4f0"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
         "# Plotting Number of Unique Hospitals Per Year\n",
         "unique_hospitals = combined_df.groupby(\"Year\")[\"PRVDR_NUM\"].nunique().reset_index(name=\"Number of Unique Hospitals\")\n",
         "\n",
@@ -269,16 +284,12 @@
         "unique_hospitals_chart.display()\n",
         "\n",
         "\n",
-        "#print(\"Observations Per Year:\")\n",
-        "#print(observations_per_year)\n",
-        "#print(\"\\nUnique Hospitals Per Year:\")\n",
-        "#print(unique_hospitals_per_year)\n",
-        "\n",
-        "# Compare the two plots to understand the structure of the data.\n",
-        "# Observations per year may be higher due to multiple records for the same hospital.\n",
-        "# Unique hospitals per year give an idea of how many distinct hospitals are in the dataset for each year."
+        "print(\"Observations Per Year:\")\n",
+        "print(combined_year_df)\n",
+        "print(\"\\nUnique Hospitals Per Year:\")\n",
+        "print(unique_hospitals)\n"
       ],
-      "id": "2ade4ad4",
+      "id": "e9977685",
       "execution_count": null,
       "outputs": []
     },
@@ -286,15 +297,16 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "4. \n",
-        "    a.\n",
-        "    b.\n",
+        "    b. \n",
+        "    \n",
+        "Since the number of observations equals the number of unique hospitals, it suggests that the data is clean and does not contain repeated entries for hospitals within the same year. Each hospital appears only once per year, simplifying analysis.\n",
+        "\n",
         "\n",
         "## Identify hospital closures in POS file (15 pts) (*)\n",
         "\n",
         "1. Termination code equal to 00=ACTIVE PROVIDER. The data contain only up to the code 07. The other codes apply to CLIA. \n"
       ],
-      "id": "5df7aa57"
+      "id": "38890edf"
     },
     {
       "cell_type": "code",
@@ -306,7 +318,7 @@
         "\n",
         "active_2016 = combined_df[(combined_df[\"Year\"] == \"2016\") & (combined_df[\"PGM_TRMNTN_CD\"] == \"00\")]\n",
         "\n",
-        "print(active_2016.head())\n",
+        "#print(active_2016.head())\n",
         "\n",
         "suspected_closures = []\n",
         "\n",
@@ -331,9 +343,9 @@
         "num_closures = len(suspected_closures_df)\n",
         "\n",
         "display(f\"Total suspected hospital closures: {num_closures}\")\n",
-        "display(suspected_closures_df.head()) \n"
+        "#display(suspected_closures_df.head()) \n"
       ],
-      "id": "89bdf1f6",
+      "id": "a09e5320",
       "execution_count": null,
       "outputs": []
     },
@@ -343,7 +355,7 @@
       "source": [
         "2. \n"
       ],
-      "id": "d6ee11e8"
+      "id": "067d0953"
     },
     {
       "cell_type": "code",
@@ -355,7 +367,7 @@
         "\n",
         "display(top_10_closures)"
       ],
-      "id": "917582a6",
+      "id": "4efc5173",
       "execution_count": null,
       "outputs": []
     },
@@ -365,15 +377,12 @@
       "source": [
         "3. \n"
       ],
-      "id": "40b0d3c5"
+      "id": "ec900fa5"
     },
     {
       "cell_type": "code",
       "metadata": {},
       "source": [
-        "import pandas as pd\n",
-        "import numpy as np\n",
-        "\n",
         "# Step 1: Count the number of active hospitals (PGM_TRMNTN_CD == \"00\") by ZIP_CD (zip code) for each year\n",
         "active_hospitals_by_year = (\n",
         "    combined_df[combined_df['PGM_TRMNTN_CD'] == \"00\"]\n",
@@ -424,7 +433,7 @@
         "count_of_zeros = (merged_df['closure_dummy'] == 0).sum()\n",
         "display(f\"Number of rows with closure_dummy = 0: {count_of_zeros}\")\n"
       ],
-      "id": "0ea2fc7c",
+      "id": "e9b4a0d4",
       "execution_count": null,
       "outputs": []
     },
@@ -445,7 +454,7 @@
         "sorted_corrected_closures = corrected_closures.sort_values(by='Facility Name').head(10)\n",
         "display(sorted_corrected_closures[['Facility Name', 'ZIP Code', 'Year Closed', 'closure_difference']])"
       ],
-      "id": "edb1c7e9",
+      "id": "3f80c995",
       "execution_count": null,
       "outputs": []
     },
@@ -481,7 +490,7 @@
         "\n",
         "2. \n"
       ],
-      "id": "59f747bd"
+      "id": "8db2bdfb"
     },
     {
       "cell_type": "code",
@@ -520,7 +529,7 @@
         "ax.axis('off')\n",
         "plt.show()\n"
       ],
-      "id": "395dfb5c",
+      "id": "1befb3d5",
       "execution_count": null,
       "outputs": []
     },
@@ -534,7 +543,7 @@
         "\n",
         "The GeoDataFrame, `zips_all_centroids`, has dimensions that correspond to the number of unique ZIP code areas, with two main columns: `ZIP Code` and `geometry`. The `ZIP Code` column holds the specific ZIP Code Tabulation Area (ZCTA) for each entry, representing each distinct postal region. The `geometry` column contains the centroid point of each ZIP code area, with each point indicating the latitude and longitude coordinates for the center of the ZIP code region. This structure allows for further geographic analysis, such as calculating distances to the nearest hospital.\n"
       ],
-      "id": "32e87eb6"
+      "id": "2fc76993"
     },
     {
       "cell_type": "code",
@@ -558,7 +567,7 @@
         "# Display the first few rows to verify the output\n",
         "zips_all_centroids.head()"
       ],
-      "id": "d8b6c6d8",
+      "id": "037fb0cc",
       "execution_count": null,
       "outputs": []
     },
@@ -568,7 +577,7 @@
       "source": [
         "2. \n"
       ],
-      "id": "423a444c"
+      "id": "c06c4551"
     },
     {
       "cell_type": "code",
@@ -600,7 +609,7 @@
         "print(\"Unique ZIP codes in Texas subset:\", num_texas_zips)\n",
         "print(\"Unique ZIP codes in Texas and bordering states subset:\", num_bordering_zips)\n"
       ],
-      "id": "c8a2f3f0",
+      "id": "72297372",
       "execution_count": null,
       "outputs": []
     },
@@ -612,7 +621,7 @@
         "\n",
         "We used an inner join to retain only the ZIP codes in Texas and neighboring states that have at least one hospital, ensuring that `zips_withhospital_centroids` includes only relevant ZIP codes. The join was conducted on the `ZIP Code` column from `zips_texas_borderstates_centroids` and `ZIP_CD` from `zips_with_hospital`, allowing us to filter specifically for ZIP codes that had at least one active hospital in 2016. The result is a GeoDataFrame, `zips_withhospital_centroids`, which contains only the ZIP codes in Texas or bordering states with at least one hospital in that year.\n"
       ],
-      "id": "9923f279"
+      "id": "85b51fb7"
     },
     {
       "cell_type": "code",
@@ -620,7 +629,7 @@
       "source": [
         "# Step 1: Filter hospitals active in 2016 and count by ZIP code\n",
         "\n",
-        "hospitals_per_zip = combined_df[(combined_df['Year'] == 2016) & (\n",
+        "hospitals_per_zip = combined_df[(combined_df['Year'] == \"2016\") & (\n",
         "    combined_df['PGM_TRMNTN_CD'] == \"00\")].groupby('ZIP_CD').size().reset_index(name='hospital_count')\n",
         "\n",
         "\n",
@@ -641,7 +650,7 @@
         "# Display\n",
         "display(zips_withhospital_centroids.head())"
       ],
-      "id": "2a0941c7",
+      "id": "d413f7c5",
       "execution_count": null,
       "outputs": []
     },
@@ -652,7 +661,7 @@
         "4. \n",
         "    a.\n"
       ],
-      "id": "768ab3b2"
+      "id": "8503dc1c"
     },
     {
       "cell_type": "code",
@@ -690,7 +699,7 @@
         "estimated_total_time = (elapsed_time / 10) * total_rows\n",
         "print(\"Estimated time for entire dataset:\", estimated_total_time, \"seconds\")"
       ],
-      "id": "634684fc",
+      "id": "288ade5e",
       "execution_count": null,
       "outputs": []
     },
@@ -701,7 +710,7 @@
         "    b.\n",
         "The full dataset calculation completed significantly faster than initially estimated, suggesting that the small sample used for estimation might have over-predicted the time required. This difference could be due to optimizations in the spatial library that enhance performance with larger datasets, as well as variations in system performance between runs. Small sample estimates can sometimes lead to overestimations when the operation scales more efficiently across a larger volume of data. \n"
       ],
-      "id": "fcde6a51"
+      "id": "6a5c62d4"
     },
     {
       "cell_type": "code",
@@ -731,7 +740,7 @@
         "print(\"Estimated time for entire dataset:\", estimated_total_time, \"seconds\")\n",
         "print(\"Difference between actual and estimated time:\", abs(elapsed_time_full - estimated_total_time), \"seconds\")\n"
       ],
-      "id": "646c5b7c",
+      "id": "a6e2e231",
       "execution_count": null,
       "outputs": []
     },
@@ -747,10 +756,9 @@
         "\n",
         "5. \n",
         "    a.\n",
-        "\n",
-        " The distances are converted from degrees to miles.\n"
+        " The distances are converted from degrees to miles by multiplying 69 times.\n"
       ],
-      "id": "ce6ac0ed"
+      "id": "6f8f24ed"
     },
     {
       "cell_type": "code",
@@ -773,7 +781,7 @@
         "print(\"Average distance to the nearest hospital (in degrees):\", avg_dist_degrees)\n",
         "print(\"Average distance to the nearest hospital (in miles):\", avg_dist_miles)"
       ],
-      "id": "407c7c22",
+      "id": "10f24cc9",
       "execution_count": null,
       "outputs": []
     },
@@ -781,9 +789,11 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
+        "An average distance of around 15 miles aligns with expectations, especially given Texas’s mix of densely populated cities and sparsely populated rural regions. \n",
+        "\n",
         "   b.\n"
       ],
-      "id": "b8cc202d"
+      "id": "1fa9927f"
     },
     {
       "cell_type": "code",
@@ -800,7 +810,7 @@
         "ax.set_ylabel(\"Latitude\")\n",
         "plt.show()"
       ],
-      "id": "d6f120e0",
+      "id": "17bcde73",
       "execution_count": null,
       "outputs": []
     },
@@ -808,14 +818,13 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "The choropleth map visually represents the distance to the nearest hospital for each ZIP code in Texas, showing regions with greater or lesser hospital access.\n",
+        "The choropleth map visually represents the distance to the nearest hospital for each ZIP code in Texas. This map highlights the healthcare access disparity between urban and rural regions in Texas. Rural areas, especially in western Texas, may face challenges in timely access to healthcare due to the greater distances to hospitals, which aligns with the calculated average distance. \n",
         "\n",
         "## Effects of closures on access in Texas (15 pts)\n",
         "\n",
-        "\n",
         "1. \n"
       ],
-      "id": "ab99c5ef"
+      "id": "0b4f14b5"
     },
     {
       "cell_type": "code",
@@ -833,7 +842,7 @@
         "# Display the result\n",
         "closures_by_zipcode"
       ],
-      "id": "47657f42",
+      "id": "faa2a24a",
       "execution_count": null,
       "outputs": []
     },
@@ -843,7 +852,7 @@
       "source": [
         "2. \n"
       ],
-      "id": "c06afd69"
+      "id": "c51cee0c"
     },
     {
       "cell_type": "code",
@@ -879,7 +888,7 @@
         "ax.set_axis_off()\n",
         "plt.show()"
       ],
-      "id": "097e25e2",
+      "id": "a56d09e8",
       "execution_count": null,
       "outputs": []
     },
@@ -887,12 +896,108 @@
       "cell_type": "markdown",
       "metadata": {},
       "source": [
-        "3. \n",
-        "4. \n",
-        "\n",
-        "## Reflecting on the exercise (10 pts) "
+        "3. \n"
       ],
-      "id": "1b3fa63e"
+      "id": "de435553"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "import geopandas as gpd\n",
+        "from shapely.geometry import Point\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "# Step 1: Filter for directly affected ZIP codes\n",
+        "directly_affected_zips = texas_zip_closures[texas_zip_closures['Number of Closures'] > 0]\n",
+        "\n",
+        "# Convert Texas ZIP code coordinates to the appropriate projection for distance calculations\n",
+        "# Project the GeoDataFrame to a projection that uses meters (such as EPSG: 3395 or EPSG: 3857)\n",
+        "zip_shapefile = zip_shapefile.to_crs(epsg=3395)\n",
+        "directly_affected_zips = directly_affected_zips.to_crs(epsg=3395)\n",
+        "\n",
+        "# Step 2: Create a 10-mile (approximately 16093.4 meters) buffer around each directly affected ZIP code\n",
+        "directly_affected_zips['buffer'] = directly_affected_zips.geometry.buffer(16093.4)  # 10 miles in meters\n",
+        "\n",
+        "# Step 3: Create a GeoDataFrame containing only the buffers and set it to use the 'buffer' column as geometry\n",
+        "buffers_gdf = gpd.GeoDataFrame(directly_affected_zips, geometry='buffer')\n",
+        "\n",
+        "# Step 4: Spatial join with the overall Texas ZIP code shapefile to find ZIP codes within the 10-mile buffer\n",
+        "# Note: The spatial join will match any ZIP code whose centroid falls within the buffer area\n",
+        "indirectly_affected_zips = gpd.sjoin(zip_shapefile, buffers_gdf, how=\"inner\", predicate=\"intersects\")\n",
+        "\n",
+        "# Step 5: Count the number of unique indirectly affected ZIP codes\n",
+        "indirectly_affected_zip_count = indirectly_affected_zips['ZCTA5_left'].nunique()\n",
+        "\n",
+        "print(f\"Number of indirectly affected ZIP codes in Texas: {indirectly_affected_zip_count}\")\n"
+      ],
+      "id": "b5c377a1",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Number of indirectly affected ZIP codes in Texas: 359\n",
+        "\n",
+        "4. "
+      ],
+      "id": "5ecec19c"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "import geopandas as gpd\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "# Step 1: Start with all Texas ZIP codes\n",
+        "texas_zip_codes = zip_shapefile.to_crs(buffers_gdf.crs)\n",
+        "\n",
+        "# Step 2: Create the categories\n",
+        "texas_zip_codes['Category'] = 'Not Affected'\n",
+        "\n",
+        "texas_zip_codes.loc[texas_zip_codes['ZCTA5'].isin(directly_affected_zips['ZCTA5']), 'Category'] = 'Directly Affected'\n",
+        "\n",
+        "texas_zip_codes.loc[\n",
+        "    (texas_zip_codes['ZCTA5'].isin(indirectly_affected_zips['ZCTA5_left'])) &\n",
+        "    (texas_zip_codes['Category'] != 'Directly Affected'), 'Category'\n",
+        "] = 'Indirectly Affected'\n",
+        "\n",
+        "# Step 3: Plot the choropleth map\n",
+        "fig, ax = plt.subplots(1, 1, figsize=(10, 10))\n",
+        "\n",
+        "category_colors = {'Not Affected': 'lightgrey', 'Directly Affected': 'red', 'Indirectly Affected': 'orange'}\n",
+        "\n",
+        "texas_zip_codes.plot(column='Category', cmap='Set1', legend=True, ax=ax,\n",
+        "                     edgecolor='black', linewidth=0.2)\n",
+        "\n",
+        "ax.set_title('Impact of Hospital Closures on Texas ZIP Codes (2016-2019)')\n",
+        "ax.set_axis_off()\n",
+        "plt.show()"
+      ],
+      "id": "a291b5b0",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Reflecting on the exercise (10 pts) \n",
+        "\n",
+        "1. \n",
+        "\n",
+        "The \"first-pass\" method we used to identify hospital closures based on termination codes and date ranges has several limitations that could lead to inaccuracies. One issue is that data reporting may be delayed or incomplete, meaning closures might not appear immediately or could be misrepresented if a hospital has only temporarily closed. Changes in ownership, mergers, or rebranding may also trigger termination codes without representing an actual closure, which could result in false positives. Additionally, temporary closures, such as those for renovations or emergencies, may appear as permanent in the dataset if not properly labeled. Data inconsistencies, such as incomplete or varying codes, further complicate closure identification and could lead to missed closures or errors. Finally, using only ZIP codes to identify closures doesn’t account for nearby hospitals that may still serve the affected area, thus misrepresenting the impact. To improve accuracy, we could cross-reference with external sources like health department records or news reports, validate closure status over multiple years, and incorporate additional details such as ownership changes, closure duration, and geographic proximity to other hospitals.\n",
+        "\n",
+        "2. \n",
+        "\n",
+        "The current approach of identifying ZIP codes affected by hospital closures, based on direct closures within a ZIP code or proximity within a 10-mile radius, provides a basic assessment of hospital access changes. However, this method has limitations. For example, it assumes that a 10-mile distance is equally impactful across all areas, which may not hold true. In rural regions, a 10-mile distance may indeed indicate a significant gap in access, but in urban areas, other hospitals within a short distance may still provide adequate coverage, making the closure less impactful. This method also doesn’t consider population density or specific transportation factors that influence actual access to healthcare services.\n",
+        "\n",
+        "To improve this measure, one approach could be to adjust the buffer distance based on urban or rural classification, using a smaller radius for urban areas and a larger one for rural ones. Additionally, measuring travel time or distance based on road networks rather than a simple radius would give a more accurate reflection of access. Another refinement could involve considering hospital capacity, as some hospitals may not be able to handle increased demand from nearby closures, further affecting access."
+      ],
+      "id": "baffab06"
     }
   ],
   "metadata": {
