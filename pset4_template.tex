@@ -185,7 +185,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
-  pdftitle={Your Title},
+  pdftitle={PS 4},
   colorlinks=true,
   linkcolor={blue},
   filecolor={Maroon},
@@ -194,7 +194,7 @@
   pdfcreator={LaTeX via pandoc}}
 
 
-\title{Your Title}
+\title{PS 4}
 \author{}
 \date{}
 
@@ -250,8 +250,8 @@ Please refer to the minilesson on code style
   \textbf{\href{https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit}{here}}''
   (1 point)
 \item
-  Late coins used this pset: **\_\_** Late coins left after submission:
-  **\_\_**
+  Late coins used this pset: **\textbackslash1** Late coins left after
+  submission: **\textbackslash3**
 \item
   Knit your \texttt{ps4.qmd} to an PDF file to make \texttt{ps4.pdf},
 
@@ -290,15 +290,30 @@ pts)}\label{download-and-explore-the-provider-of-services-pos-file-10-pts}
 \item
 \end{enumerate}
 
+For \texttt{pos2016.csv}, We selected the following variables to
+streamline the dataset for analysis: \texttt{PRVDR\_CTGRY\_CD} (Provider
+Category Code) and \texttt{PRVDR\_CTGRY\_SBTYP\_CD} (Provider Subtype
+Code) to categorize providers; \texttt{PRVDR\_NUM} (CMS Certification
+Number) to uniquely identify each hospital; \texttt{PGM\_TRMNTN\_CD}
+(Termination Code) to flag closures; \texttt{FAC\_NAME} (Facility Name)
+for context on specific hospitals; \texttt{ZIP\_CD} (ZIP Code) for
+mapping closures at the ZIP level; and \texttt{STATE\_CD} (State
+Abbreviation) to filter for Texas and neighboring states. These fields
+allow for targeted analysis of hospital closures and their geographic
+impact, removing unnecessary data.
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \ImportTok{import}\NormalTok{ requests}
 \ImportTok{import}\NormalTok{ pandas }\ImportTok{as}\NormalTok{ pd}
 \ImportTok{import}\NormalTok{ altair }\ImportTok{as}\NormalTok{ alt}
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
 
+\CommentTok{\# Base URL for accessing the CMS dataset API}
 \NormalTok{base\_url }\OperatorTok{=} \StringTok{"https://data.cms.gov/data{-}api/v1/dataset/}\SpecialCharTok{\{uuid\}}\StringTok{/data"}
-\NormalTok{uuid }\OperatorTok{=} \StringTok{"96ba2257{-}2080{-}49c1{-}9e5b{-}7726f9f83cad"}
+\NormalTok{uuid }\OperatorTok{=} \StringTok{"96ba2257{-}2080{-}49c1{-}9e5b{-}7726f9f83cad"}  \CommentTok{\# Unique ID for the specific dataset}
 
+\CommentTok{\# Columns to be retrieved from the dataset}
 \NormalTok{columns }\OperatorTok{=}\NormalTok{ [}
     \StringTok{"PRVDR\_CTGRY\_CD"}\NormalTok{,        }\CommentTok{\# Provider Category Code}
     \StringTok{"PRVDR\_CTGRY\_SBTYP\_CD"}\NormalTok{,  }\CommentTok{\# Provider Subtype Code}
@@ -309,76 +324,55 @@ pts)}\label{download-and-explore-the-provider-of-services-pos-file-10-pts}
     \StringTok{"STATE\_CD"}               \CommentTok{\# State Abbreviation}
 \NormalTok{]}
 
+\CommentTok{\# Prepare columns for API request}
 \NormalTok{columns\_param }\OperatorTok{=} \StringTok{","}\NormalTok{.join(columns)}
 
+\CommentTok{\# Initialize offset and limit for paginated API requests}
 \NormalTok{offset }\OperatorTok{=} \DecValTok{0}
-\NormalTok{limit }\OperatorTok{=} \DecValTok{5000}  \CommentTok{\#  API allows size to be set to 5000}
+\NormalTok{limit }\OperatorTok{=} \DecValTok{5000}  \CommentTok{\# Maximum size per request set to 5000 as per API limit}
 
-\NormalTok{all\_data }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{all\_data }\OperatorTok{=}\NormalTok{ []  }\CommentTok{\# List to accumulate all retrieved data}
 
 \ControlFlowTok{while} \VariableTok{True}\NormalTok{:}
+    \CommentTok{\# Set parameters for API request}
 \NormalTok{    params }\OperatorTok{=}\NormalTok{ \{}
-
         \StringTok{"column"}\NormalTok{: columns\_param,}
         \StringTok{"size"}\NormalTok{: limit,}
         \StringTok{"offset"}\NormalTok{: offset}
 \NormalTok{    \}}
 
+    \CommentTok{\# Format URL with the dataset UUID}
 \NormalTok{    url }\OperatorTok{=}\NormalTok{ base\_url.}\BuiltInTok{format}\NormalTok{(uuid}\OperatorTok{=}\NormalTok{uuid)}
 \NormalTok{    response }\OperatorTok{=}\NormalTok{ requests.get(url, params}\OperatorTok{=}\NormalTok{params)}
 
+    \CommentTok{\# Check if the response is successful}
     \ControlFlowTok{if}\NormalTok{ response.status\_code }\OperatorTok{!=} \DecValTok{200}\NormalTok{:}
         \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Error: }\SpecialCharTok{\{}\NormalTok{response}\SpecialCharTok{.}\NormalTok{status\_code}\SpecialCharTok{\}}\SpecialStringTok{, }\SpecialCharTok{\{}\NormalTok{response}\SpecialCharTok{.}\NormalTok{text}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
         \ControlFlowTok{break}
 
+    \CommentTok{\# Parse the response JSON data}
 \NormalTok{    data }\OperatorTok{=}\NormalTok{ response.json()}
 
+    \CommentTok{\# Check if data is empty, indicating the end of available data}
     \ControlFlowTok{if} \KeywordTok{not}\NormalTok{ data:}
         \BuiltInTok{print}\NormalTok{(}\StringTok{"No more data available."}\NormalTok{)}
         \ControlFlowTok{break}
 
+    \CommentTok{\# Append retrieved data to the list}
 \NormalTok{    all\_data.extend(data)}
 
+    \CommentTok{\# Increment offset for the next batch of data}
 \NormalTok{    offset }\OperatorTok{+=}\NormalTok{ limit}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Fetched }\SpecialCharTok{\{}\BuiltInTok{len}\NormalTok{(data)}\SpecialCharTok{\}}\SpecialStringTok{ rows, moving to next batch..."}\NormalTok{)}
 
+\CommentTok{\# Create a DataFrame from the accumulated data}
 \NormalTok{df }\OperatorTok{=}\NormalTok{ pd.DataFrame(all\_data)}
 
-
+\CommentTok{\# Export the DataFrame to a CSV file without the index column}
 \NormalTok{df.to\_csv(}\StringTok{"pos2016.csv"}\NormalTok{, index}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 5000 rows, moving to next batch...
-Fetched 1557 rows, moving to next batch...
 No more data available.
 \end{verbatim}
 
@@ -391,64 +385,39 @@ No more data available.
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{\# Read data from the CSV file into a DataFrame}
 \NormalTok{df }\OperatorTok{=}\NormalTok{ pd.read\_csv(}\StringTok{"pos2016.csv"}\NormalTok{)}
 
-
+\CommentTok{\# Filter the DataFrame to include only short{-}term hospitals}
+\CommentTok{\# based on specific category and subtype codes}
 \NormalTok{df\_st\_hospitals }\OperatorTok{=}\NormalTok{ df[}
-\NormalTok{    (df[}\StringTok{"PRVDR\_CTGRY\_CD"}\NormalTok{] }\OperatorTok{==} \DecValTok{1}\NormalTok{) }\OperatorTok{\&} 
+    \CommentTok{\# Provider Category Code for short{-}term hospitals}
+\NormalTok{    (df[}\StringTok{"PRVDR\_CTGRY\_CD"}\NormalTok{] }\OperatorTok{==} \DecValTok{1}\NormalTok{) }\OperatorTok{\&}
+    \CommentTok{\# Provider Subtype Code for short{-}term hospitals}
 \NormalTok{    (df[}\StringTok{"PRVDR\_CTGRY\_SBTYP\_CD"}\NormalTok{] }\OperatorTok{==} \DecValTok{1}\NormalTok{)}
 \NormalTok{]}
 
+\CommentTok{\# Count the number of short{-}term hospitals}
 \NormalTok{num\_hospitals }\OperatorTok{=}\NormalTok{ df\_st\_hospitals.shape[}\DecValTok{0}\NormalTok{]}
-\BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Number of short{-}term hospitals reported in the data: }\SpecialCharTok{\{}\NormalTok{num\_hospitals}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
 
-\BuiltInTok{print}\NormalTok{(df\_st\_hospitals)}
+\CommentTok{\# Display the number of short{-}term hospitals}
+\NormalTok{display(}
+    \SpecialStringTok{f"Number of short{-}term hospitals reported in the data: }\SpecialCharTok{\{}\NormalTok{num\_hospitals}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-Number of short-term hospitals reported in the data: 7245
-        PRVDR_CTGRY_CD  PRVDR_CTGRY_SBTYP_CD PRVDR_NUM  PGM_TRMNTN_CD  \
-0                    1                   1.0    010001              0   
-1                    1                   1.0    010004              1   
-2                    1                   1.0    010005              0   
-3                    1                   1.0    010006              0   
-4                    1                   1.0    010007              0   
-...                ...                   ...       ...            ...   
-133526               1                   1.0    670114              0   
-133527               1                   1.0    670115              0   
-133528               1                   1.0    670116              0   
-133529               1                   1.0    670117              0   
-133530               1                   1.0    670118              0   
-
-                                FAC_NAME   ZIP_CD STATE_CD  
-0       SOUTHEAST ALABAMA MEDICAL CENTER  36301.0       AL  
-1                 NORTH JACKSON HOSPITAL  35740.0       AL  
-2          MARSHALL MEDICAL CENTER SOUTH  35957.0       AL  
-3         ELIZA COFFEE MEMORIAL HOSPITAL  35631.0       AL  
-4               MIZELL MEMORIAL HOSPITAL  36467.0       AL  
-...                                  ...      ...      ...  
-133526             WEIMAR MEDICAL CENTER  78962.0       TX  
-133527      CLEVELAND EMERGENCY HOSPTIAL  77327.0       TX  
-133528                WISE HEALTH SYSTEM  76177.0       TX  
-133529  TEXAS GENERAL HOSPITAL- VZRMC LP  75140.0       TX  
-133530              FIRST TEXAS HOSPITAL  77070.0       TX  
-
-[7245 rows x 7 columns]
+'Number of short-term hospitals reported in the data: 7245'
 \end{verbatim}
-
-The number of short-term hospitals reported in the dataset for Q4 2016
-is 7,245.
 
 According to the American Hospital Association (AHA) Annual Survey, the
 estimated number of short-term hospitals is 4,500--5,000. Similarly, the
-CMS Hospital Compare dataset indicates around 4,800 hospitals.
-
-The discrepancy could be due to the narrower definition used in our
-dataset and the timing of data collection, which only includes hospitals
-in Q4 2016. Additionally, the CMS dataset might not include hospitals
-that do not participate in Medicare or Medicaid, which could lead to
-lower numbers.
+CMS Hospital Compare dataset indicates around 4,800 hospitals. The
+discrepancy could be due to the narrower definition used in our dataset
+and the timing of data collection, which only includes hospitals in Q4
+2016. Additionally, the CMS dataset might not include hospitals that do
+not participate in Medicare or Medicaid, which could lead to lower
+numbers.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -476,24 +445,28 @@ lower numbers.
     \StringTok{"STATE\_CD"}               \CommentTok{\# State Abbreviation}
 \NormalTok{]}
 
+\CommentTok{\# Prepare columns for the API request}
 \NormalTok{columns\_param }\OperatorTok{=} \StringTok{","}\NormalTok{.join(columns)}
 
-\NormalTok{combined\_data }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{combined\_data }\OperatorTok{=}\NormalTok{ []  }\CommentTok{\# List to store data from all years}
 
+\CommentTok{\# Loop through each year and fetch data}
 \ControlFlowTok{for}\NormalTok{ year\_quarter, uuid }\KeywordTok{in}\NormalTok{ uuid\_dict.items():}
 \NormalTok{    offset }\OperatorTok{=} \DecValTok{0}
-\NormalTok{    limit }\OperatorTok{=} \DecValTok{5000}  
+\NormalTok{    limit }\OperatorTok{=} \DecValTok{5000}  \CommentTok{\# API request limit}
 \NormalTok{    all\_data }\OperatorTok{=}\NormalTok{ []}
 
     \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Fetching data for }\SpecialCharTok{\{}\NormalTok{year\_quarter}\SpecialCharTok{\}}\SpecialStringTok{..."}\NormalTok{)}
 
     \ControlFlowTok{while} \VariableTok{True}\NormalTok{:}
+        \CommentTok{\# Set parameters for API request}
 \NormalTok{        params }\OperatorTok{=}\NormalTok{ \{}
             \StringTok{"column"}\NormalTok{: columns\_param,}
             \StringTok{"size"}\NormalTok{: limit,}
             \StringTok{"offset"}\NormalTok{: offset}
 \NormalTok{        \}}
 
+        \CommentTok{\# Create the complete API URL}
 \NormalTok{        url }\OperatorTok{=} \SpecialStringTok{f"https://data.cms.gov/data{-}api/v1/dataset/}\SpecialCharTok{\{}\NormalTok{uuid}\SpecialCharTok{\}}\SpecialStringTok{/data"}
 \NormalTok{        response }\OperatorTok{=}\NormalTok{ requests.get(url, params}\OperatorTok{=}\NormalTok{params)}
 
@@ -503,211 +476,67 @@ lower numbers.
 
 \NormalTok{        data }\OperatorTok{=}\NormalTok{ response.json()}
 
+        \CommentTok{\# Stop loop if no more data is returned}
         \ControlFlowTok{if} \KeywordTok{not}\NormalTok{ data:}
             \BuiltInTok{print}\NormalTok{(}\StringTok{"No more data available."}\NormalTok{)}
             \ControlFlowTok{break}
 
 \NormalTok{        all\_data.extend(data)}
-
 \NormalTok{        offset }\OperatorTok{+=}\NormalTok{ limit}
-        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Fetched }\SpecialCharTok{\{}\BuiltInTok{len}\NormalTok{(data)}\SpecialCharTok{\}}\SpecialStringTok{ rows for }\SpecialCharTok{\{}\NormalTok{year\_quarter}\SpecialCharTok{\}}\SpecialStringTok{, moving to next batch..."}\NormalTok{)}
 
 \NormalTok{    year\_data }\OperatorTok{=}\NormalTok{ pd.DataFrame(all\_data)}
-\NormalTok{    year\_data[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{=}\NormalTok{ year\_quarter[:}\DecValTok{4}\NormalTok{]}
+\NormalTok{    year\_data[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{=}\NormalTok{ year\_quarter[:}\DecValTok{4}\NormalTok{]  }\CommentTok{\# Add year column for reference}
 
-    \CommentTok{\# filtro por las condiciones}
+    \CommentTok{\# Filter DataFrame for short{-}term hospitals}
 \NormalTok{    year\_data }\OperatorTok{=}\NormalTok{ year\_data[}
-\NormalTok{    (year\_data[}\StringTok{"PRVDR\_CTGRY\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"01"}\NormalTok{) }\OperatorTok{\&} 
-\NormalTok{    (year\_data[}\StringTok{"PRVDR\_CTGRY\_SBTYP\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"01"}\NormalTok{)}
-\NormalTok{]  }
+\NormalTok{        (year\_data[}\StringTok{"PRVDR\_CTGRY\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"01"}\NormalTok{) }\OperatorTok{\&}
+\NormalTok{        (year\_data[}\StringTok{"PRVDR\_CTGRY\_SBTYP\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"01"}\NormalTok{)}
+\NormalTok{    ]}
 
+    \CommentTok{\# Append filtered data to the combined list}
 \NormalTok{    combined\_data.append(year\_data)}
 
+\CommentTok{\# Concatenate all the yearly DataFrames into one}
 \NormalTok{combined\_df }\OperatorTok{=}\NormalTok{ pd.concat(combined\_data, axis}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
 
+\CommentTok{\# Save combined data to a CSV file}
 \NormalTok{combined\_df.to\_csv(}\StringTok{"combined\_data.csv"}\NormalTok{, index}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
 
+\CommentTok{\# Print total number of records in the combined DataFrame}
 \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Total records retrieved across all years: }\SpecialCharTok{\{}\NormalTok{combined\_df}\SpecialCharTok{.}\NormalTok{shape[}\DecValTok{0}\NormalTok{]}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
 Fetching data for 2016Q4...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 5000 rows for 2016Q4, moving to next batch...
-Fetched 1557 rows for 2016Q4, moving to next batch...
 No more data available.
 Fetching data for 2017Q4...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 5000 rows for 2017Q4, moving to next batch...
-Fetched 4110 rows for 2017Q4, moving to next batch...
 No more data available.
 Fetching data for 2018Q4...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 5000 rows for 2018Q4, moving to next batch...
-Fetched 1696 rows for 2018Q4, moving to next batch...
 No more data available.
 Fetching data for 2019Q4...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 5000 rows for 2019Q4, moving to next batch...
-Fetched 4206 rows for 2019Q4, moving to next batch...
 No more data available.
 Total records retrieved across all years: 29085
 \end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ImportTok{import}\NormalTok{ altair }\ImportTok{as}\NormalTok{ alt}
-
 \CommentTok{\# Plotting Number of Observations Per Year}
 
-\NormalTok{combined\_year\_df }\OperatorTok{=}\NormalTok{ combined\_df.groupby(}\StringTok{"Year"}\NormalTok{).size().reset\_index(name}\OperatorTok{=}\StringTok{"Number of Observations"}\NormalTok{)}
+\NormalTok{combined\_year\_df }\OperatorTok{=}\NormalTok{ combined\_df.groupby(}
+    \StringTok{"Year"}\NormalTok{).size().reset\_index(name}\OperatorTok{=}\StringTok{"Number of Observations"}\NormalTok{)}
 
 \NormalTok{obs\_chart }\OperatorTok{=}\NormalTok{ alt.Chart(combined\_year\_df).mark\_bar().encode(}
-\NormalTok{    x}\OperatorTok{=}\NormalTok{alt.X(}\StringTok{"Year:O"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Year"}\NormalTok{),  }
+\NormalTok{    x}\OperatorTok{=}\NormalTok{alt.X(}\StringTok{"Year:O"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Year"}\NormalTok{),}
 \NormalTok{    y}\OperatorTok{=}\NormalTok{alt.Y(}\StringTok{"Number of Observations:Q"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Number of Observations"}\NormalTok{),}
 \NormalTok{    tooltip}\OperatorTok{=}\NormalTok{[}\StringTok{"Year"}\NormalTok{, }\StringTok{"Number of Observations"}\NormalTok{]}
 \NormalTok{).properties(}
 \NormalTok{    title}\OperatorTok{=}\StringTok{"Number of Observations Per Year"}
 \NormalTok{)}
 
-\NormalTok{obs\_chart.display()}
-
-
-\CommentTok{\# Plotting Number of Unique Hospitals Per Year}
-\NormalTok{unique\_hospitals }\OperatorTok{=}\NormalTok{ combined\_df.groupby(}\StringTok{"Year"}\NormalTok{)[}\StringTok{"PRVDR\_NUM"}\NormalTok{].nunique().reset\_index(name}\OperatorTok{=}\StringTok{"Number of Unique Hospitals"}\NormalTok{)}
-
-\NormalTok{unique\_hospitals\_chart }\OperatorTok{=}\NormalTok{ alt.Chart(unique\_hospitals).mark\_bar().encode(}
-\NormalTok{    x}\OperatorTok{=}\NormalTok{alt.X(}\StringTok{"Year:O"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Year"}\NormalTok{), }
-\NormalTok{    y}\OperatorTok{=}\NormalTok{alt.Y(}\StringTok{"Number of Unique Hospitals:Q"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Number of Unique Hospitals"}\NormalTok{),}
-\NormalTok{    tooltip}\OperatorTok{=}\NormalTok{[}\StringTok{"Year"}\NormalTok{, }\StringTok{"Number of Unique Hospitals"}\NormalTok{]}
-\NormalTok{).properties(}
-\NormalTok{    title}\OperatorTok{=}\StringTok{"Number of Unique Hospitals Per Year"}
-\NormalTok{)}
-
-\NormalTok{unique\_hospitals\_chart.display()}
-
-
-\CommentTok{\#print("Observations Per Year:")}
-\CommentTok{\#print(observations\_per\_year)}
-\CommentTok{\#print("\textbackslash{}nUnique Hospitals Per Year:")}
-\CommentTok{\#print(unique\_hospitals\_per\_year)}
-
-\CommentTok{\# Compare the two plots to understand the structure of the data.}
-\CommentTok{\# Observations per year may be higher due to multiple records for the same hospital.}
-\CommentTok{\# Unique hospitals per year give an idea of how many distinct hospitals are in the dataset for each year.}
+\NormalTok{obs\_chart.show()}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-alt.Chart(...)
-\end{verbatim}
 
 \begin{verbatim}
 alt.Chart(...)
@@ -722,9 +551,61 @@ alt.Chart(...)
   \def\labelenumii{\alph{enumii}.}
   \tightlist
   \item
-  \item
   \end{enumerate}
 \end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Plotting Number of Unique Hospitals Per Year}
+\NormalTok{unique\_hospitals }\OperatorTok{=}\NormalTok{ combined\_df.groupby(}\StringTok{"Year"}\NormalTok{)[}\StringTok{"PRVDR\_NUM"}\NormalTok{].nunique(}
+\NormalTok{).reset\_index(name}\OperatorTok{=}\StringTok{"Number of Unique Hospitals"}\NormalTok{)}
+
+\NormalTok{unique\_hospitals\_chart }\OperatorTok{=}\NormalTok{ alt.Chart(unique\_hospitals).mark\_bar().encode(}
+\NormalTok{    x}\OperatorTok{=}\NormalTok{alt.X(}\StringTok{"Year:O"}\NormalTok{, title}\OperatorTok{=}\StringTok{"Year"}\NormalTok{),}
+\NormalTok{    y}\OperatorTok{=}\NormalTok{alt.Y(}\StringTok{"Number of Unique Hospitals:Q"}\NormalTok{,}
+\NormalTok{            title}\OperatorTok{=}\StringTok{"Number of Unique Hospitals"}\NormalTok{),}
+\NormalTok{    tooltip}\OperatorTok{=}\NormalTok{[}\StringTok{"Year"}\NormalTok{, }\StringTok{"Number of Unique Hospitals"}\NormalTok{]}
+\NormalTok{).properties(}
+\NormalTok{    title}\OperatorTok{=}\StringTok{"Number of Unique Hospitals Per Year"}
+\NormalTok{)}
+
+\NormalTok{unique\_hospitals\_chart.show()}
+
+\BuiltInTok{print}\NormalTok{(}\StringTok{"Observations Per Year:"}\NormalTok{)}
+\BuiltInTok{print}\NormalTok{(combined\_year\_df)}
+\BuiltInTok{print}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n}\StringTok{Unique Hospitals Per Year:"}\NormalTok{)}
+\BuiltInTok{print}\NormalTok{(unique\_hospitals)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+alt.Chart(...)
+\end{verbatim}
+
+\begin{verbatim}
+Observations Per Year:
+   Year  Number of Observations
+0  2016                    7245
+1  2017                    7260
+2  2018                    7277
+3  2019                    7303
+
+Unique Hospitals Per Year:
+   Year  Number of Unique Hospitals
+0  2016                        7245
+1  2017                        7260
+2  2018                        7277
+3  2019                        7303
+\end{verbatim}
+
+\begin{verbatim}
+b. 
+\end{verbatim}
+
+Since the number of observations equals the number of unique hospitals,
+it suggests that the data is clean and does not contain repeated entries
+for hospitals within the same year. Each hospital appears only once per
+year, simplifying analysis.
 
 \subsection{Identify hospital closures in POS file (15 pts)
 (*)}\label{identify-hospital-closures-in-pos-file-15-pts}
@@ -739,74 +620,54 @@ alt.Chart(...)
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{\# Ensure the program termination code is treated as a string for comparison}
 \NormalTok{combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{] }\OperatorTok{=}\NormalTok{ combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{].astype(}\BuiltInTok{str}\NormalTok{)}
 
+\CommentTok{\# List of codes indicating inactive or terminated facilities}
 \NormalTok{inactive\_codes }\OperatorTok{=}\NormalTok{ [}\StringTok{"01"}\NormalTok{, }\StringTok{"02"}\NormalTok{, }\StringTok{"03"}\NormalTok{, }\StringTok{"04"}\NormalTok{, }\StringTok{"05"}\NormalTok{, }\StringTok{"06"}\NormalTok{, }\StringTok{"07"}\NormalTok{]}
 
-\NormalTok{active\_2016 }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{==} \StringTok{"2016"}\NormalTok{) }\OperatorTok{\&}\NormalTok{ (combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"00"}\NormalTok{)]}
+\CommentTok{\# Filter for active hospitals in 2016}
+\NormalTok{active\_2016 }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{==} \StringTok{"2016"}\NormalTok{) }\OperatorTok{\&}\NormalTok{ (}
+\NormalTok{    combined\_df[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{] }\OperatorTok{==} \StringTok{"00"}\NormalTok{)]}
 
-\BuiltInTok{print}\NormalTok{(active\_2016.head())}
-
+\CommentTok{\# List to collect suspected hospital closures}
 \NormalTok{suspected\_closures }\OperatorTok{=}\NormalTok{ []}
 
+\CommentTok{\# Iterate through each active hospital in 2016}
 \ControlFlowTok{for}\NormalTok{ idx, hospital }\KeywordTok{in}\NormalTok{ active\_2016.iterrows():}
 \NormalTok{    provider\_num }\OperatorTok{=}\NormalTok{ hospital[}\StringTok{"PRVDR\_NUM"}\NormalTok{]}
 \NormalTok{    facility\_name }\OperatorTok{=}\NormalTok{ hospital[}\StringTok{"FAC\_NAME"}\NormalTok{]}
 \NormalTok{    zip\_code }\OperatorTok{=}\NormalTok{ hospital[}\StringTok{"ZIP\_CD"}\NormalTok{]}
-    
+
+    \CommentTok{\# Check subsequent years to see if the hospital has closed}
     \ControlFlowTok{for}\NormalTok{ year }\KeywordTok{in}\NormalTok{ [}\StringTok{"2017"}\NormalTok{, }\StringTok{"2018"}\NormalTok{, }\StringTok{"2019"}\NormalTok{]:}
-\NormalTok{        yearly\_data }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{"PRVDR\_NUM"}\NormalTok{] }\OperatorTok{==}\NormalTok{ provider\_num) }\OperatorTok{\&}\NormalTok{ (combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{==}\NormalTok{ year)]}
-        
+\NormalTok{        yearly\_data }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{"PRVDR\_NUM"}\NormalTok{] }\OperatorTok{==}\NormalTok{ provider\_num) }\OperatorTok{\&}\NormalTok{ (}
+\NormalTok{            combined\_df[}\StringTok{"Year"}\NormalTok{] }\OperatorTok{==}\NormalTok{ year)]}
+
+        \CommentTok{\# If the hospital record is missing or marked as inactive, add to suspected closures}
         \ControlFlowTok{if}\NormalTok{ yearly\_data.empty }\KeywordTok{or}\NormalTok{ yearly\_data[}\StringTok{"PGM\_TRMNTN\_CD"}\NormalTok{].isin(inactive\_codes).}\BuiltInTok{any}\NormalTok{():}
 \NormalTok{            suspected\_closures.append(\{}
                 \StringTok{"Provider Number"}\NormalTok{: provider\_num,}
                 \StringTok{"Facility Name"}\NormalTok{: facility\_name,}
                 \StringTok{"ZIP Code"}\NormalTok{: zip\_code,}
-                \StringTok{"Year Closed"}\NormalTok{: year}
+                \StringTok{"Year Closed"}\NormalTok{: year  }\CommentTok{\# Record the year in which closure is suspected}
 \NormalTok{            \})}
-            \ControlFlowTok{break}  
+            \ControlFlowTok{break}  \CommentTok{\# Exit the loop once a closure is detected}
 
+\CommentTok{\# Create a DataFrame for the suspected closures}
 \NormalTok{suspected\_closures\_df }\OperatorTok{=}\NormalTok{ pd.DataFrame(suspected\_closures)}
+
+\CommentTok{\# Count the number of suspected closures}
 \NormalTok{num\_closures }\OperatorTok{=} \BuiltInTok{len}\NormalTok{(suspected\_closures\_df)}
 
+\CommentTok{\# Display the total number of suspected hospital closures}
 \NormalTok{display(}\SpecialStringTok{f"Total suspected hospital closures: }\SpecialCharTok{\{}\NormalTok{num\_closures}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
-\NormalTok{display(suspected\_closures\_df.head()) }
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-  PRVDR_CTGRY_CD PRVDR_CTGRY_SBTYP_CD PRVDR_NUM PGM_TRMNTN_CD  \
-0             01                   01    010001            00   
-2             01                   01    010005            00   
-3             01                   01    010006            00   
-4             01                   01    010007            00   
-5             01                   01    010008            00   
-
-                           FAC_NAME ZIP_CD STATE_CD  Year  
-0  SOUTHEAST ALABAMA MEDICAL CENTER  36301       AL  2016  
-2     MARSHALL MEDICAL CENTER SOUTH  35957       AL  2016  
-3    ELIZA COFFEE MEMORIAL HOSPITAL  35631       AL  2016  
-4          MIZELL MEMORIAL HOSPITAL  36467       AL  2016  
-5       CRENSHAW COMMUNITY HOSPITAL  36049       AL  2016  
-\end{verbatim}
-
-\begin{verbatim}
 'Total suspected hospital closures: 174'
 \end{verbatim}
-
-\begin{longtable}[]{@{}lllll@{}}
-\toprule\noalign{}
-& Provider Number & Facility Name & ZIP Code & Year Closed \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-0 & 010032 & WEDOWEE HOSPITAL & 36278 & 2019 \\
-1 & 010047 & GEORGIANA MEDICAL CENTER & 36033 & 2019 \\
-2 & 010146 & RMC JACKSONVILLE & 36265 & 2018 \\
-3 & 010172 & NORTH ALABAMA SPECIALITY HOSPITAL & 35611 & 2018 \\
-4 & 030001 & ABRAZO MARYVALE CAMPUS & 85031 & 2017 \\
-\end{longtable}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -817,10 +678,13 @@ alt.Chart(...)
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{\# Sort the suspected closures DataFrame by the "Facility Name" column}
 \NormalTok{sorted\_closures }\OperatorTok{=}\NormalTok{ suspected\_closures\_df.sort\_values(by}\OperatorTok{=}\StringTok{"Facility Name"}\NormalTok{)}
 
+\CommentTok{\# Select the top 10 records and display only "Facility Name" and "Year Closed" columns}
 \NormalTok{top\_10\_closures }\OperatorTok{=}\NormalTok{ sorted\_closures[[}\StringTok{"Facility Name"}\NormalTok{, }\StringTok{"Year Closed"}\NormalTok{]].head(}\DecValTok{10}\NormalTok{)}
 
+\CommentTok{\# Display the top 10 sorted closures}
 \NormalTok{display(top\_10\_closures)}
 \end{Highlighting}
 \end{Shaded}
@@ -853,10 +717,7 @@ alt.Chart(...)
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ImportTok{import}\NormalTok{ pandas }\ImportTok{as}\NormalTok{ pd}
-\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
-
-\CommentTok{\# Step 1: Count the number of active hospitals (PGM\_TRMNTN\_CD == "00") by ZIP\_CD (zip code) for each year}
+\CommentTok{\# Step 1: Count the number of active hospitals (PGM\_TRMNTN\_CD == "00") by ZIP\_CD for each year}
 \NormalTok{active\_hospitals\_by\_year }\OperatorTok{=}\NormalTok{ (}
 \NormalTok{    combined\_df[combined\_df[}\StringTok{\textquotesingle{}PGM\_TRMNTN\_CD\textquotesingle{}}\NormalTok{] }\OperatorTok{==} \StringTok{"00"}\NormalTok{]}
 \NormalTok{    .groupby([}\StringTok{\textquotesingle{}ZIP\_CD\textquotesingle{}}\NormalTok{, }\StringTok{\textquotesingle{}Year\textquotesingle{}}\NormalTok{])}
@@ -967,7 +828,6 @@ pt)}\label{download-census-zip-code-shapefile-10-pt}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
-\tightlist
 \item
   \begin{enumerate}
   \def\labelenumii{\alph{enumii}.}
@@ -975,13 +835,6 @@ pt)}\label{download-census-zip-code-shapefile-10-pt}
   \item
     \textbf{Five File Types and Their Contents}
   \end{enumerate}
-\end{enumerate}
-
-Based on the files provided, here is a summary of the five common
-shapefile-related formats and their typical contents:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
 \item
   \textbf{\texttt{.shp} (Shapefile)}: Stores the geometry of the
   feature, such as points, lines, or polygons representing geographic
@@ -1017,11 +870,18 @@ size of each file after unzipping, use the following command in the
 terminal of the folder:
 
 total 1648944 -rw-r--r--@ 1 aosilva staff 6.1M Sep 14 2011
-gz\_2010\_us\_860\_00\_500k.dbf -rw-r--r--@ 1 aosilva staff 165B Sep 14
-2011 gz\_2010\_us\_860\_00\_500k.prj -rw-r--r--@ 1 aosilva staff 799M
-Sep 14 2011 gz\_2010\_us\_860\_00\_500k.shp -rw-r--r--@ 1 aosilva staff
-259K Sep 14 2011 gz\_2010\_us\_860\_00\_500k.shx -rw-rw-rw-@ 1 aosilva
-staff 15K Dec 9 2011 gz\_2010\_us\_860\_00\_500k
+gz\_2010\_us\_860\_00\_500k.dbf
+
+-rw-r--r--@ 1 aosilva staff 165B Sep 14 2011
+gz\_2010\_us\_860\_00\_500k.prj
+
+-rw-r--r--@ 1 aosilva staff 799M Sep 14 2011
+gz\_2010\_us\_860\_00\_500k.shp
+
+-rw-r--r--@ 1 aosilva staff 259K Sep 14 2011
+gz\_2010\_us\_860\_00\_500k.shx
+
+-rw-rw-rw-@ 1 aosilva staff 15K Dec 9 2011 gz\_2010\_us\_860\_00\_500k
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1038,14 +898,14 @@ staff 15K Dec 9 2011 gz\_2010\_us\_860\_00\_500k
 \NormalTok{zip\_shapefile }\OperatorTok{=}\NormalTok{ gpd.read\_file(}\StringTok{\textquotesingle{}gz\_2010\_us\_860\_00\_500k/gz\_2010\_us\_860\_00\_500k.shp\textquotesingle{}}\NormalTok{)}
 
 \CommentTok{\# Filter for Texas ZIP codes (750{-}799)}
-\NormalTok{texas\_zip\_shapefile }\OperatorTok{=}\NormalTok{ zip\_shapefile[zip\_shapefile[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{].}\BuiltInTok{str}\NormalTok{.startswith(}\BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{map}\NormalTok{(}\BuiltInTok{str}\NormalTok{, }\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{800}\NormalTok{))))]}
+\NormalTok{texas\_zip\_shapefile }\OperatorTok{=}\NormalTok{ zip\_shapefile[zip\_shapefile[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{].}\BuiltInTok{str}\NormalTok{.startswith(}\BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{map}\NormalTok{(}\BuiltInTok{str}\NormalTok{, }\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{799}\NormalTok{))))]}
 
 \CommentTok{\# Check the result}
 \NormalTok{texas\_zip\_shapefile.head()}
 
 \CommentTok{\# Filter combined\_df for 2016 and Texas ZIP codes}
-\NormalTok{hospitals\_2016 }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{\textquotesingle{}Year\textquotesingle{}}\NormalTok{] }\OperatorTok{==} \DecValTok{2016}\NormalTok{) }\OperatorTok{\&} 
-\NormalTok{                             (combined\_df[}\StringTok{\textquotesingle{}ZIP\_CD\textquotesingle{}}\NormalTok{].}\BuiltInTok{str}\NormalTok{.startswith(}\BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{map}\NormalTok{(}\BuiltInTok{str}\NormalTok{, }\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{800}\NormalTok{)))))]}
+\NormalTok{hospitals\_2016 }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{\textquotesingle{}Year\textquotesingle{}}\NormalTok{] }\OperatorTok{==} \StringTok{"2016"}\NormalTok{) }\OperatorTok{\&} 
+\NormalTok{                             (combined\_df[}\StringTok{\textquotesingle{}ZIP\_CD\textquotesingle{}}\NormalTok{].}\BuiltInTok{str}\NormalTok{.startswith(}\BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{map}\NormalTok{(}\BuiltInTok{str}\NormalTok{, }\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{799}\NormalTok{)))))]}
 
 \CommentTok{\# Count hospitals per ZIP code}
 \NormalTok{hospitals\_per\_zip }\OperatorTok{=}\NormalTok{ hospitals\_2016.groupby(}\StringTok{\textquotesingle{}ZIP\_CD\textquotesingle{}}\NormalTok{).size().reset\_index(name}\OperatorTok{=}\StringTok{\textquotesingle{}hospital\_count\textquotesingle{}}\NormalTok{)}
@@ -1067,7 +927,7 @@ staff 15K Dec 9 2011 gz\_2010\_us\_860\_00\_500k
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{pset4_template_files/figure-pdf/cell-10-output-1.pdf}
+\includegraphics{pset4_template_files/figure-pdf/cell-11-output-1.pdf}
 
 \subsection{Calculate zip code's distance to the nearest hospital (20
 pts)
@@ -1095,7 +955,7 @@ hospital.
 \ImportTok{import}\NormalTok{ geopandas }\ImportTok{as}\NormalTok{ gpd}
 
 \CommentTok{\# Calculate centroids for each ZIP code and create a new GeoDataFrame with these centroids}
-\NormalTok{zip\_shapefile[}\StringTok{\textquotesingle{}centroid\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zip\_shapefile.geometry.centroid  }\CommentTok{\# Calculate centroids}
+\NormalTok{zip\_shapefile[}\StringTok{\textquotesingle{}centroid\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zip\_shapefile.geometry.centroid  }
 
 \CommentTok{\# Convert this information into a new GeoDataFrame, focusing only on the centroids and ZIP code info}
 \NormalTok{zips\_all\_centroids }\OperatorTok{=}\NormalTok{ gpd.GeoDataFrame(zip\_shapefile[[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{, }\StringTok{\textquotesingle{}centroid\textquotesingle{}}\NormalTok{]], geometry}\OperatorTok{=}\StringTok{\textquotesingle{}centroid\textquotesingle{}}\NormalTok{)}
@@ -1113,9 +973,9 @@ hospital.
 \end{Shaded}
 
 \begin{verbatim}
-C:\Users\aosil\AppData\Local\Temp\ipykernel_32336\3876718460.py:4: UserWarning: Geometry is in a geographic CRS. Results from 'centroid' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
+C:\Users\aosil\AppData\Local\Temp\ipykernel_48896\998579674.py:4: UserWarning: Geometry is in a geographic CRS. Results from 'centroid' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
 
-  zip_shapefile['centroid'] = zip_shapefile.geometry.centroid  # Calculate centroids
+  zip_shapefile['centroid'] = zip_shapefile.geometry.centroid
 \end{verbatim}
 
 \begin{verbatim}
@@ -1148,7 +1008,6 @@ Columns in zips_all_centroids: Index(['ZIP Code', 'geometry'], dtype='object')
 \begin{Highlighting}[]
 \CommentTok{\# Define ZIP code prefixes for Texas and its neighboring states}
 \NormalTok{texas\_prefixes }\OperatorTok{=} \BuiltInTok{list}\NormalTok{(}\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{799}\NormalTok{))}
-\CommentTok{\# Adding neighboring state prefixes}
 \NormalTok{bordering\_prefixes }\OperatorTok{=}\NormalTok{ texas\_prefixes }\OperatorTok{+}\NormalTok{ [}\DecValTok{70}\NormalTok{, }\DecValTok{71}\NormalTok{, }\DecValTok{72}\NormalTok{, }\DecValTok{73}\NormalTok{, }\DecValTok{74}\NormalTok{, }\DecValTok{87}\NormalTok{, }\DecValTok{88}\NormalTok{]}
 
 \CommentTok{\# Convert prefixes to strings for matching with the \textquotesingle{}ZIP Code\textquotesingle{} column}
@@ -1199,22 +1058,20 @@ hospital in that year.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{\# Step 1: Filter hospitals active in 2016 and count by ZIP code}
+\CommentTok{\# Step 1: Filter hospitals active in 2016 and count by ZIP }
 
-\NormalTok{hospitals\_per\_zip }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{\textquotesingle{}Year\textquotesingle{}}\NormalTok{] }\OperatorTok{==} \DecValTok{2016}\NormalTok{) }\OperatorTok{\&}\NormalTok{ (}
+\NormalTok{hospitals\_per\_zip }\OperatorTok{=}\NormalTok{ combined\_df[(combined\_df[}\StringTok{\textquotesingle{}Year\textquotesingle{}}\NormalTok{] }\OperatorTok{==} \StringTok{"2016"}\NormalTok{) }\OperatorTok{\&}\NormalTok{ (}
 \NormalTok{    combined\_df[}\StringTok{\textquotesingle{}PGM\_TRMNTN\_CD\textquotesingle{}}\NormalTok{] }\OperatorTok{==} \StringTok{"00"}\NormalTok{)].groupby(}\StringTok{\textquotesingle{}ZIP\_CD\textquotesingle{}}\NormalTok{).size().reset\_index(name}\OperatorTok{=}\StringTok{\textquotesingle{}hospital\_count\textquotesingle{}}\NormalTok{)}
-
 
 \CommentTok{\# Filter to keep only ZIP codes with at least one hospital}
 \NormalTok{zips\_with\_hospital }\OperatorTok{=}\NormalTok{ hospitals\_per\_zip[hospitals\_per\_zip[}\StringTok{\textquotesingle{}hospital\_count\textquotesingle{}}\NormalTok{] }\OperatorTok{\textgreater{}} \DecValTok{0}\NormalTok{]}
 
 \CommentTok{\# Step 2: Merge this count data with zips\_texas\_borderstates\_centroids on ZIP code}
-\CommentTok{\# Ensuring ZIP codes match data types between datasets}
 \NormalTok{zips\_texas\_borderstates\_centroids[}\StringTok{\textquotesingle{}ZIP Code\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zips\_texas\_borderstates\_centroids[}\StringTok{\textquotesingle{}ZIP Code\textquotesingle{}}\NormalTok{].astype(}
     \BuiltInTok{str}\NormalTok{)}
 \NormalTok{zips\_with\_hospital[}\StringTok{\textquotesingle{}ZIP\_CD\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zips\_with\_hospital[}\StringTok{\textquotesingle{}ZIP\_CD\textquotesingle{}}\NormalTok{].astype(}\BuiltInTok{str}\NormalTok{)}
 
-\CommentTok{\# Perform an inner join to keep only ZIP codes with hospitals in 2016}
+\CommentTok{\# Inner join to keep only ZIP codes with hospitals in 2016}
 \NormalTok{zips\_withhospital\_centroids }\OperatorTok{=}\NormalTok{ zips\_texas\_borderstates\_centroids.merge(}
 \NormalTok{    zips\_with\_hospital, left\_on}\OperatorTok{=}\StringTok{\textquotesingle{}ZIP Code\textquotesingle{}}\NormalTok{, right\_on}\OperatorTok{=}\StringTok{\textquotesingle{}ZIP\_CD\textquotesingle{}}\NormalTok{, how}\OperatorTok{=}\StringTok{\textquotesingle{}inner\textquotesingle{}}
 \NormalTok{)}
@@ -1240,6 +1097,11 @@ See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stab
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
+0 & 70043 & POINT (-89.96276 29.94804) & 70043 & 1 \\
+1 & 70127 & POINT (-89.97675 30.02501) & 70127 & 1 \\
+2 & 70301 & POINT (-90.74089 29.8141) & 70301 & 1 \\
+3 & 70360 & POINT (-90.81028 29.58819) & 70360 & 2 \\
+4 & 70403 & POINT (-90.48388 30.48002) & 70403 & 2 \\
 \end{longtable}
 
 \begin{enumerate}
@@ -1291,12 +1153,12 @@ See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stab
 \end{Shaded}
 
 \begin{verbatim}
-Time taken for 10 ZIP codes: 0.14083528518676758 seconds
-Estimated time for entire dataset: 26.899539470672607 seconds
+Time taken for 10 ZIP codes: 0.11382412910461426 seconds
+Estimated time for entire dataset: 21.740408658981323 seconds
 \end{verbatim}
 
 \begin{verbatim}
-C:\Users\aosil\AppData\Local\Temp\ipykernel_32336\1307856507.py:18: UserWarning: Geometry is in a geographic CRS. Results from 'distance' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
+C:\Users\aosil\AppData\Local\Temp\ipykernel_48896\1307856507.py:18: UserWarning: Geometry is in a geographic CRS. Results from 'distance' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
 
   nearest_hospital = zips_withhospital_centroids.distance(row.geometry).min()
 \end{verbatim}
@@ -1325,7 +1187,8 @@ larger volume of data.
 \NormalTok{full\_distances }\OperatorTok{=}\NormalTok{ []}
 \ControlFlowTok{for}\NormalTok{ idx, row }\KeywordTok{in}\NormalTok{ zips\_texas\_centroids.iterrows():}
     \CommentTok{\# Calculate the distance to the nearest hospital ZIP code}
-\NormalTok{    nearest\_hospital\_distance }\OperatorTok{=}\NormalTok{ zips\_withhospital\_centroids.distance(row.geometry).}\BuiltInTok{min}\NormalTok{()}
+\NormalTok{    nearest\_hospital\_distance }\OperatorTok{=}\NormalTok{ zips\_withhospital\_centroids.distance(}
+\NormalTok{        row.geometry).}\BuiltInTok{min}\NormalTok{()}
 \NormalTok{    full\_distances.append(nearest\_hospital\_distance)}
 
 \CommentTok{\# End timer}
@@ -1336,22 +1199,23 @@ larger volume of data.
 \BuiltInTok{print}\NormalTok{(}\StringTok{"Actual time taken for full dataset:"}\NormalTok{, elapsed\_time\_full, }\StringTok{"seconds"}\NormalTok{)}
 
 \CommentTok{\# Compare to estimated time from previous step}
-\NormalTok{estimated\_total\_time }\OperatorTok{=}\NormalTok{ (elapsed\_time }\OperatorTok{/} \DecValTok{10}\NormalTok{) }\OperatorTok{*} \BuiltInTok{len}\NormalTok{(zips\_texas\_centroids)  }\CommentTok{\# Using the previous subset estimate}
+\NormalTok{estimated\_total\_time }\OperatorTok{=}\NormalTok{ (elapsed\_time }\OperatorTok{/} \DecValTok{10}\NormalTok{) }\OperatorTok{*} \BuiltInTok{len}\NormalTok{(zips\_texas\_centroids)}
 \BuiltInTok{print}\NormalTok{(}\StringTok{"Estimated time for entire dataset:"}\NormalTok{, estimated\_total\_time, }\StringTok{"seconds"}\NormalTok{)}
-\BuiltInTok{print}\NormalTok{(}\StringTok{"Difference between actual and estimated time:"}\NormalTok{, }\BuiltInTok{abs}\NormalTok{(elapsed\_time\_full }\OperatorTok{{-}}\NormalTok{ estimated\_total\_time), }\StringTok{"seconds"}\NormalTok{)}
+\BuiltInTok{print}\NormalTok{(}\StringTok{"Difference between actual and estimated time:"}\NormalTok{, }\BuiltInTok{abs}\NormalTok{(}
+\NormalTok{    elapsed\_time\_full }\OperatorTok{{-}}\NormalTok{ estimated\_total\_time), }\StringTok{"seconds"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-C:\Users\aosil\AppData\Local\Temp\ipykernel_32336\3268991715.py:10: UserWarning: Geometry is in a geographic CRS. Results from 'distance' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
+C:\Users\aosil\AppData\Local\Temp\ipykernel_48896\714762939.py:10: UserWarning: Geometry is in a geographic CRS. Results from 'distance' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
 
-  nearest_hospital_distance = zips_withhospital_centroids.distance(row.geometry).min()
+  nearest_hospital_distance = zips_withhospital_centroids.distance(
 \end{verbatim}
 
 \begin{verbatim}
-Actual time taken for full dataset: 19.329349279403687 seconds
-Estimated time for entire dataset: 26.899539470672607 seconds
-Difference between actual and estimated time: 7.570190191268921 seconds
+Actual time taken for full dataset: 22.815343141555786 seconds
+Estimated time for entire dataset: 21.740408658981323 seconds
+Difference between actual and estimated time: 1.074934482574463 seconds
 \end{verbatim}
 
 \begin{verbatim}
@@ -1360,9 +1224,8 @@ c.
 
 In the \texttt{.prj} file , the unit is degrees. This indicates that the
 geographic data is in a coordinate system based on latitude and
-longitude, with units in angular degrees rather than linear distance.
-
-To convert degrees to miles, we can use an approximate conversion. Each
+longitude, with units in angular degrees rather than linear distance. To
+convert degrees to miles, we can use an approximate conversion. Each
 degree of latitude corresponds to about 69 miles, a consistent value
 because latitude lines are parallel. For longitude, the conversion
 varies depending on latitude due to the Earth's curvature; at the
@@ -1370,80 +1233,6 @@ equator, 1 degree of longitude equals approximately 69 miles, but this
 distance decreases as you move toward the poles. A common formula to
 estimate the distance per degree of longitude at a given latitude L is
 69 x cos(L) .
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\setcounter{enumi}{4}
-\tightlist
-\item
-  \begin{enumerate}
-  \def\labelenumii{\alph{enumii}.}
-  \tightlist
-  \item
-  \end{enumerate}
-\end{enumerate}
-
-The distances are converted from degrees to miles.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\ImportTok{import}\NormalTok{ geopandas }\ImportTok{as}\NormalTok{ gpd}
-\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
-
-\CommentTok{\# Calculate the distance to the nearest hospital for each ZIP code in Texas}
-\NormalTok{zips\_texas\_centroids[}\StringTok{\textquotesingle{}nearest\_hospital\_distance\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zips\_texas\_centroids.geometry.}\BuiltInTok{apply}\NormalTok{(}
-    \KeywordTok{lambda}\NormalTok{ x: zips\_withhospital\_centroids.distance(x).}\BuiltInTok{min}\NormalTok{()}
-\NormalTok{)}
-
-\CommentTok{\# Step 2: Calculate the average distance (in degrees)}
-\NormalTok{avg\_dist\_degrees }\OperatorTok{=}\NormalTok{ zips\_texas\_centroids[}\StringTok{\textquotesingle{}nearest\_hospital\_distance\textquotesingle{}}\NormalTok{].mean()}
-
-\CommentTok{\# Step 3: Convert average distance from degrees to miles}
-\NormalTok{avg\_dist\_miles }\OperatorTok{=}\NormalTok{ avg\_dist\_degrees }\OperatorTok{*} \DecValTok{69}  \CommentTok{\# 1 degree ≈ 69 miles}
-
-\BuiltInTok{print}\NormalTok{(}\StringTok{"Average distance to the nearest hospital (in degrees):"}\NormalTok{, avg\_dist\_degrees)}
-\BuiltInTok{print}\NormalTok{(}\StringTok{"Average distance to the nearest hospital (in miles):"}\NormalTok{, avg\_dist\_miles)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-C:\Users\aosil\AppData\Local\Temp\ipykernel_32336\3339965745.py:6: UserWarning: Geometry is in a geographic CRS. Results from 'distance' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
-
-  lambda x: zips_withhospital_centroids.distance(x).min()
-\end{verbatim}
-
-\begin{verbatim}
-Average distance to the nearest hospital (in degrees): nan
-Average distance to the nearest hospital (in miles): nan
-\end{verbatim}
-
-\begin{enumerate}
-\def\labelenumi{\alph{enumi}.}
-\setcounter{enumi}{1}
-\tightlist
-\item
-\end{enumerate}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{\# Step 4: Map the value for each ZIP code in Texas}
-\CommentTok{\# Convert each ZIP code\textquotesingle{}s distance to miles for mapping}
-\NormalTok{zips\_texas\_centroids[}\StringTok{\textquotesingle{}nearest\_hospital\_distance\_miles\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zips\_texas\_centroids[}\StringTok{\textquotesingle{}nearest\_hospital\_distance\textquotesingle{}}\NormalTok{] }\OperatorTok{*} \DecValTok{69}
-
-\NormalTok{fig, ax }\OperatorTok{=}\NormalTok{ plt.subplots(}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{, figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{10}\NormalTok{, }\DecValTok{8}\NormalTok{))}
-\NormalTok{zips\_texas\_centroids.plot(column}\OperatorTok{=}\StringTok{\textquotesingle{}nearest\_hospital\_distance\_miles\textquotesingle{}}\NormalTok{, cmap}\OperatorTok{=}\StringTok{\textquotesingle{}coolwarm\textquotesingle{}}\NormalTok{, legend}\OperatorTok{=}\VariableTok{True}\NormalTok{, ax}\OperatorTok{=}\NormalTok{ax)}
-\NormalTok{ax.set\_title(}\StringTok{"Distance to Nearest Hospital for Each ZIP Code in Texas (Miles)"}\NormalTok{)}
-\NormalTok{ax.set\_xlabel(}\StringTok{"Longitude"}\NormalTok{)}
-\NormalTok{ax.set\_ylabel(}\StringTok{"Latitude"}\NormalTok{)}
-\NormalTok{plt.show()}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{pset4_template_files/figure-pdf/cell-17-output-1.pdf}
-
-The choropleth map visually represents the distance to the nearest
-hospital for each ZIP code in Texas, showing regions with greater or
-lesser hospital access.
 
 \subsection{Effects of closures on access in Texas (15
 pts)}\label{effects-of-closures-on-access-in-texas-15-pts}
@@ -1458,14 +1247,14 @@ pts)}\label{effects-of-closures-on-access-in-texas-15-pts}
 \begin{Highlighting}[]
 \CommentTok{\# Filter for Texas ZIP codes in the range 75000 to 79999 and for closures between 2016 and 2019}
 \NormalTok{texas\_closures }\OperatorTok{=}\NormalTok{ corrected\_closures[}
-\NormalTok{    (corrected\_closures[}\StringTok{\textquotesingle{}ZIP Code\textquotesingle{}}\NormalTok{].astype(}\BuiltInTok{str}\NormalTok{).}\BuiltInTok{str}\NormalTok{.startswith(}\BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{map}\NormalTok{(}\BuiltInTok{str}\NormalTok{, }\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{799}\NormalTok{))))) }\OperatorTok{\&} 
+\NormalTok{    (corrected\_closures[}\StringTok{\textquotesingle{}ZIP Code\textquotesingle{}}\NormalTok{].astype(}\BuiltInTok{str}\NormalTok{).}\BuiltInTok{str}\NormalTok{.startswith(}\BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{map}\NormalTok{(}\BuiltInTok{str}\NormalTok{, }\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{799}\NormalTok{))))) }\OperatorTok{\&}
 \NormalTok{    (corrected\_closures[}\StringTok{\textquotesingle{}Year Closed\textquotesingle{}}\NormalTok{].between(}\StringTok{"2016"}\NormalTok{, }\StringTok{"2019"}\NormalTok{))}
 \NormalTok{]}
 
 \CommentTok{\# Group by ZIP Code and count the number of closures for each ZIP code}
-\NormalTok{closures\_by\_zipcode }\OperatorTok{=}\NormalTok{ texas\_closures.groupby(}\StringTok{\textquotesingle{}ZIP Code\textquotesingle{}}\NormalTok{).size().reset\_index(name}\OperatorTok{=}\StringTok{\textquotesingle{}Number of Closures\textquotesingle{}}\NormalTok{)}
+\NormalTok{closures\_by\_zipcode }\OperatorTok{=}\NormalTok{ texas\_closures.groupby(}
+    \StringTok{\textquotesingle{}ZIP Code\textquotesingle{}}\NormalTok{).size().reset\_index(name}\OperatorTok{=}\StringTok{\textquotesingle{}Number of Closures\textquotesingle{}}\NormalTok{)}
 
-\CommentTok{\# Display the result}
 \NormalTok{closures\_by\_zipcode}
 \end{Highlighting}
 \end{Shaded}
@@ -1513,7 +1302,7 @@ pts)}\label{effects-of-closures-on-access-in-texas-15-pts}
 \NormalTok{zip\_shapefile }\OperatorTok{=}\NormalTok{ gpd.read\_file(}\StringTok{\textquotesingle{}gz\_2010\_us\_860\_00\_500k/gz\_2010\_us\_860\_00\_500k.shp\textquotesingle{}}\NormalTok{)}
 
 \CommentTok{\# Filter for Texas ZIP codes (ZIP codes starting with 750{-}799)}
-\NormalTok{zip\_shapefile }\OperatorTok{=}\NormalTok{ zip\_shapefile[zip\_shapefile[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{].}\BuiltInTok{str}\NormalTok{.startswith(}\BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{map}\NormalTok{(}\BuiltInTok{str}\NormalTok{, }\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{800}\NormalTok{))))]}
+\NormalTok{zip\_shapefile }\OperatorTok{=}\NormalTok{ zip\_shapefile[zip\_shapefile[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{].}\BuiltInTok{str}\NormalTok{.startswith(}\BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{map}\NormalTok{(}\BuiltInTok{str}\NormalTok{, }\BuiltInTok{range}\NormalTok{(}\DecValTok{750}\NormalTok{, }\DecValTok{799}\NormalTok{))))]}
 
 \CommentTok{\# Ensure ZIP code columns are strings for matching}
 \NormalTok{zip\_shapefile[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zip\_shapefile[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{].astype(}\BuiltInTok{str}\NormalTok{)}
@@ -1542,18 +1331,228 @@ pts)}\label{effects-of-closures-on-access-in-texas-15-pts}
 Number of directly affected ZIP codes in Texas: 17
 \end{verbatim}
 
-\includegraphics{pset4_template_files/figure-pdf/cell-19-output-2.pdf}
+\includegraphics{pset4_template_files/figure-pdf/cell-18-output-2.pdf}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \setcounter{enumi}{2}
 \tightlist
 \item
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ geopandas }\ImportTok{as}\NormalTok{ gpd}
+\ImportTok{from}\NormalTok{ shapely.geometry }\ImportTok{import}\NormalTok{ Point}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+
+\CommentTok{\# Step 1: Filter for directly affected ZIP codes}
+\NormalTok{directly\_affected\_zips }\OperatorTok{=}\NormalTok{ texas\_zip\_closures[texas\_zip\_closures[}\StringTok{\textquotesingle{}Number of Closures\textquotesingle{}}\NormalTok{] }\OperatorTok{\textgreater{}} \DecValTok{0}\NormalTok{]}
+
+\CommentTok{\# Convert Texas ZIP code coordinates to the appropriate projection for distance calculations .Project the GeoDataFrame to a projection that uses meters (such as EPSG: 3395 or EPSG: 3857)}
+\NormalTok{zip\_shapefile }\OperatorTok{=}\NormalTok{ zip\_shapefile.to\_crs(epsg}\OperatorTok{=}\DecValTok{3395}\NormalTok{)}
+\NormalTok{directly\_affected\_zips }\OperatorTok{=}\NormalTok{ directly\_affected\_zips.to\_crs(epsg}\OperatorTok{=}\DecValTok{3395}\NormalTok{)}
+
+\CommentTok{\# Step 2: Create a 10{-}mile (approx. 16093.4 m) buffer around each directly affected ZIP code}
+\NormalTok{directly\_affected\_zips[}\StringTok{\textquotesingle{}buffer\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ directly\_affected\_zips.geometry.}\BuiltInTok{buffer}\NormalTok{(}\FloatTok{16093.4}\NormalTok{)  }
+
+\CommentTok{\# Step 3: Create a GeoDataFrame containing only the buffers and set it to use the \textquotesingle{}buffer\textquotesingle{} column as geometry}
+\NormalTok{buffers\_gdf }\OperatorTok{=}\NormalTok{ gpd.GeoDataFrame(directly\_affected\_zips, geometry}\OperatorTok{=}\StringTok{\textquotesingle{}buffer\textquotesingle{}}\NormalTok{)}
+
+\CommentTok{\# Step 4: Spatial join with the overall Texas ZIP code shapefile to find ZIP codes within the 10{-}mile buffer}
+\NormalTok{indirectly\_affected\_zips }\OperatorTok{=}\NormalTok{ gpd.sjoin(zip\_shapefile, buffers\_gdf, how}\OperatorTok{=}\StringTok{"inner"}\NormalTok{, predicate}\OperatorTok{=}\StringTok{"intersects"}\NormalTok{)}
+
+\CommentTok{\# Step 5: Count the number of unique indirectly affected ZIP codes}
+\NormalTok{indirectly\_affected\_zip\_count }\OperatorTok{=}\NormalTok{ indirectly\_affected\_zips[}\StringTok{\textquotesingle{}ZCTA5\_left\textquotesingle{}}\NormalTok{].nunique()}
+
+\BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Number of indirectly affected ZIP codes in Texas: }\SpecialCharTok{\{}\NormalTok{indirectly\_affected\_zip\_count}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+Number of indirectly affected ZIP codes in Texas: 359
+\end{verbatim}
+
+Number of indirectly affected ZIP codes in Texas: 359
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
 \item
 \end{enumerate}
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ geopandas }\ImportTok{as}\NormalTok{ gpd}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+
+\CommentTok{\# Step 1: Start with all Texas ZIP codes}
+\NormalTok{texas\_zip\_codes }\OperatorTok{=}\NormalTok{ zip\_shapefile.to\_crs(buffers\_gdf.crs)}
+
+\CommentTok{\# Step 2: Create the categories}
+\NormalTok{texas\_zip\_codes[}\StringTok{\textquotesingle{}Category\textquotesingle{}}\NormalTok{] }\OperatorTok{=} \StringTok{\textquotesingle{}Not Affected\textquotesingle{}}
+
+\NormalTok{texas\_zip\_codes.loc[texas\_zip\_codes[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{].isin(}
+\NormalTok{    directly\_affected\_zips[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{]), }\StringTok{\textquotesingle{}Category\textquotesingle{}}\NormalTok{] }\OperatorTok{=} \StringTok{\textquotesingle{}Directly Affected\textquotesingle{}}
+
+\NormalTok{texas\_zip\_codes.loc[}
+\NormalTok{    (texas\_zip\_codes[}\StringTok{\textquotesingle{}ZCTA5\textquotesingle{}}\NormalTok{].isin(indirectly\_affected\_zips[}\StringTok{\textquotesingle{}ZCTA5\_left\textquotesingle{}}\NormalTok{])) }\OperatorTok{\&}
+\NormalTok{    (texas\_zip\_codes[}\StringTok{\textquotesingle{}Category\textquotesingle{}}\NormalTok{] }\OperatorTok{!=} \StringTok{\textquotesingle{}Directly Affected\textquotesingle{}}\NormalTok{), }\StringTok{\textquotesingle{}Category\textquotesingle{}}
+\NormalTok{] }\OperatorTok{=} \StringTok{\textquotesingle{}Indirectly Affected\textquotesingle{}}
+
+\CommentTok{\# Step 3: Plot the choropleth map}
+\NormalTok{fig, ax }\OperatorTok{=}\NormalTok{ plt.subplots(}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{, figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{10}\NormalTok{, }\DecValTok{10}\NormalTok{))}
+
+\NormalTok{category\_colors }\OperatorTok{=}\NormalTok{ \{}\StringTok{\textquotesingle{}Not Affected\textquotesingle{}}\NormalTok{: }\StringTok{\textquotesingle{}lightgrey\textquotesingle{}}\NormalTok{,}
+                   \StringTok{\textquotesingle{}Directly Affected\textquotesingle{}}\NormalTok{: }\StringTok{\textquotesingle{}red\textquotesingle{}}\NormalTok{, }\StringTok{\textquotesingle{}Indirectly Affected\textquotesingle{}}\NormalTok{: }\StringTok{\textquotesingle{}orange\textquotesingle{}}\NormalTok{\}}
+
+\NormalTok{texas\_zip\_codes.plot(column}\OperatorTok{=}\StringTok{\textquotesingle{}Category\textquotesingle{}}\NormalTok{, cmap}\OperatorTok{=}\StringTok{\textquotesingle{}Set1\textquotesingle{}}\NormalTok{, legend}\OperatorTok{=}\VariableTok{True}\NormalTok{, ax}\OperatorTok{=}\NormalTok{ax,}
+\NormalTok{                     edgecolor}\OperatorTok{=}\StringTok{\textquotesingle{}black\textquotesingle{}}\NormalTok{, linewidth}\OperatorTok{=}\FloatTok{0.2}\NormalTok{)}
+
+\NormalTok{ax.set\_title(}\StringTok{\textquotesingle{}Impact of Hospital Closures on Texas ZIP Codes (2016{-}2019)\textquotesingle{}}\NormalTok{)}
+\NormalTok{ax.set\_axis\_off()}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{pset4_template_files/figure-pdf/cell-20-output-1.pdf}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  \begin{enumerate}
+  \def\labelenumii{\alph{enumii}.}
+  \tightlist
+  \item
+    The distances are converted from degrees to miles by multiplying 69
+    times.
+  \end{enumerate}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ geopandas }\ImportTok{as}\NormalTok{ gpd}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+
+\CommentTok{\# Calculate the distance to the nearest hospital for each ZIP code in Texas}
+\NormalTok{zips\_texas\_centroids[}\StringTok{\textquotesingle{}nearest\_hospital\_distance\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zips\_texas\_centroids.geometry.}\BuiltInTok{apply}\NormalTok{(}
+    \KeywordTok{lambda}\NormalTok{ x: zips\_withhospital\_centroids.distance(x).}\BuiltInTok{min}\NormalTok{()}
+\NormalTok{)}
+
+\CommentTok{\# Step 2: Calculate the average distance (in degrees)}
+\NormalTok{avg\_dist\_degrees }\OperatorTok{=}\NormalTok{ zips\_texas\_centroids[}\StringTok{\textquotesingle{}nearest\_hospital\_distance\textquotesingle{}}\NormalTok{].mean()}
+
+\CommentTok{\# Step 3: Convert average distance from degrees to miles}
+\NormalTok{avg\_dist\_miles }\OperatorTok{=}\NormalTok{ avg\_dist\_degrees }\OperatorTok{*} \DecValTok{69}  \CommentTok{\# 1 degree ≈ 69 miles}
+
+\BuiltInTok{print}\NormalTok{(}\StringTok{"Average distance to the nearest hospital (in degrees):"}\NormalTok{, avg\_dist\_degrees)}
+\BuiltInTok{print}\NormalTok{(}\StringTok{"Average distance to the nearest hospital (in miles):"}\NormalTok{, avg\_dist\_miles)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+C:\Users\aosil\AppData\Local\Temp\ipykernel_48896\3339965745.py:6: UserWarning: Geometry is in a geographic CRS. Results from 'distance' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
+
+  lambda x: zips_withhospital_centroids.distance(x).min()
+\end{verbatim}
+
+\begin{verbatim}
+Average distance to the nearest hospital (in degrees): 0.21460584693093776
+Average distance to the nearest hospital (in miles): 14.807803438234705
+\end{verbatim}
+
+An average distance of around 15 miles aligns with expectations,
+especially given Texas's mix of densely populated cities and sparsely
+populated rural regions.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Step 4: Map the value for each ZIP code in Texas}
+\NormalTok{zips\_texas\_centroids[}\StringTok{\textquotesingle{}nearest\_hospital\_distance\_miles\textquotesingle{}}\NormalTok{] }\OperatorTok{=}\NormalTok{ zips\_texas\_centroids[}\StringTok{\textquotesingle{}nearest\_hospital\_distance\textquotesingle{}}\NormalTok{] }\OperatorTok{*} \DecValTok{69}
+
+\NormalTok{fig, ax }\OperatorTok{=}\NormalTok{ plt.subplots(}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{, figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{10}\NormalTok{, }\DecValTok{8}\NormalTok{))}
+\NormalTok{zips\_texas\_centroids.plot(column}\OperatorTok{=}\StringTok{\textquotesingle{}nearest\_hospital\_distance\_miles\textquotesingle{}}\NormalTok{, cmap}\OperatorTok{=}\StringTok{\textquotesingle{}coolwarm\textquotesingle{}}\NormalTok{, legend}\OperatorTok{=}\VariableTok{True}\NormalTok{, ax}\OperatorTok{=}\NormalTok{ax)}
+\NormalTok{ax.set\_title(}\StringTok{"Distance to Nearest Hospital for Each ZIP Code in Texas (Miles)"}\NormalTok{)}
+\NormalTok{ax.set\_xlabel(}\StringTok{"Longitude"}\NormalTok{)}
+\NormalTok{ax.set\_ylabel(}\StringTok{"Latitude"}\NormalTok{)}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{pset4_template_files/figure-pdf/cell-22-output-1.pdf}
+
+The choropleth map visually represents the distance to the nearest
+hospital for each ZIP code in Texas. This map highlights the healthcare
+access disparity between urban and rural regions in Texas. Rural areas,
+especially in western Texas, may face challenges in timely access to
+healthcare due to the greater distances to hospitals, which aligns with
+the calculated average distance.
+
 \subsection{Reflecting on the exercise (10
 pts)}\label{reflecting-on-the-exercise-10-pts}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+\end{enumerate}
+
+The ``first-pass'' method we used to identify hospital closures based on
+termination codes and date ranges has several limitations that could
+lead to inaccuracies. One issue is that data reporting may be delayed or
+incomplete, meaning closures might not appear immediately or could be
+misrepresented if a hospital has only temporarily closed. Changes in
+ownership, mergers, or rebranding may also trigger termination codes
+without representing an actual closure, which could result in false
+positives. Additionally, temporary closures, such as those for
+renovations or emergencies, may appear as permanent in the dataset if
+not properly labeled. Data inconsistencies, such as incomplete or
+varying codes, further complicate closure identification and could lead
+to missed closures or errors. Finally, using only ZIP codes to identify
+closures doesn't account for nearby hospitals that may still serve the
+affected area, thus misrepresenting the impact. To improve accuracy, we
+could cross-reference with external sources like health department
+records or news reports, validate closure status over multiple years,
+and incorporate additional details such as ownership changes, closure
+duration, and geographic proximity to other hospitals.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+\end{enumerate}
+
+The current approach of identifying ZIP codes affected by hospital
+closures, based on direct closures within a ZIP code or proximity within
+a 10-mile radius, provides a basic assessment of hospital access
+changes. However, this method has limitations. For example, it assumes
+that a 10-mile distance is equally impactful across all areas, which may
+not hold true. In rural regions, a 10-mile distance may indeed indicate
+a significant gap in access, but in urban areas, other hospitals within
+a short distance may still provide adequate coverage, making the closure
+less impactful. This method also doesn't consider population density or
+specific transportation factors that influence actual access to
+healthcare services.
+
+To improve this measure, one approach could be to adjust the buffer
+distance based on urban or rural classification, using a smaller radius
+for urban areas and a larger one for rural ones. Additionally, measuring
+travel time or distance based on road networks rather than a simple
+radius would give a more accurate reflection of access. Another
+refinement could involve considering hospital capacity, as some
+hospitals may not be able to handle increased demand from nearby
+closures, further affecting access.
 
 
 

@@ -47,7 +47,10 @@ Please refer to the minilesson on code style
 
 1. 
 
-```{python}
+For `pos2016.csv`, We selected the following variables to streamline the dataset for analysis: `PRVDR_CTGRY_CD` (Provider Category Code) and `PRVDR_CTGRY_SBTYP_CD` (Provider Subtype Code) to categorize providers; `PRVDR_NUM` (CMS Certification Number) to uniquely identify each hospital; `PGM_TRMNTN_CD` (Termination Code) to flag closures; `FAC_NAME` (Facility Name) for context on specific hospitals; `ZIP_CD` (ZIP Code) for mapping closures at the ZIP level; and `STATE_CD` (State Abbreviation) to filter for Texas and neighboring states. These fields allow for targeted analysis of hospital closures and their geographic impact, removing unnecessary data.
+
+```{python, echo = false}
+
 import requests
 import pandas as pd
 import altair as alt
@@ -137,16 +140,10 @@ num_hospitals = df_st_hospitals.shape[0]
 display(
     f"Number of short-term hospitals reported in the data: {num_hospitals}")
 
-# Display the filtered DataFrame of short-term hospitals
-display(df_st_hospitals)
-
 ```
 
-The number of short-term hospitals reported in the dataset for Q4 2016 is 7,245.
 
-According to the American Hospital Association (AHA) Annual Survey, the estimated number of short-term hospitals is 4,500–5,000. Similarly, the CMS Hospital Compare dataset indicates around 4,800 hospitals.
-
-The discrepancy could be due to the narrower definition used in our dataset and the timing of data collection, which only includes hospitals in Q4 2016. Additionally, the CMS dataset might not include hospitals that do not participate in Medicare or Medicaid, which could lead to lower numbers.
+According to the American Hospital Association (AHA) Annual Survey, the estimated number of short-term hospitals is 4,500–5,000. Similarly, the CMS Hospital Compare dataset indicates around 4,800 hospitals. The discrepancy could be due to the narrower definition used in our dataset and the timing of data collection, which only includes hospitals in Q4 2016. Additionally, the CMS dataset might not include hospitals that do not participate in Medicare or Medicaid, which could lead to lower numbers.
 
 3. 
 
@@ -193,12 +190,10 @@ for year_quarter, uuid in uuid_dict.items():
         url = f"https://data.cms.gov/data-api/v1/dataset/{uuid}/data"
         response = requests.get(url, params=params)
 
-        # Check for a successful response
         if response.status_code != 200:
             print(f"Error: {response.status_code}, {response.text}")
             break
 
-        # Parse JSON data from response
         data = response.json()
 
         # Stop loop if no more data is returned
@@ -206,13 +201,9 @@ for year_quarter, uuid in uuid_dict.items():
             print("No more data available.")
             break
 
-        # Append the fetched data to all_data
         all_data.extend(data)
-
-        # Increase offset for the next batch
         offset += limit
 
-    # Create DataFrame for the current year's data
     year_data = pd.DataFrame(all_data)
     year_data["Year"] = year_quarter[:4]  # Add year column for reference
 
@@ -250,7 +241,7 @@ obs_chart = alt.Chart(combined_year_df).mark_bar().encode(
     title="Number of Observations Per Year"
 )
 
-obs_chart.display()
+obs_chart.show()
 ```
 
 4. 
@@ -270,15 +261,12 @@ unique_hospitals_chart = alt.Chart(unique_hospitals).mark_bar().encode(
     title="Number of Unique Hospitals Per Year"
 )
 
-unique_hospitals_chart.display()
-
+unique_hospitals_chart.show()
 
 print("Observations Per Year:")
 print(combined_year_df)
 print("\nUnique Hospitals Per Year:")
 print(unique_hospitals)
-
-
 ```
 
     b. 
@@ -354,7 +342,7 @@ display(top_10_closures)
 
 ```{python}
 
-# Step 1: Count the number of active hospitals (PGM_TRMNTN_CD == "00") by ZIP_CD (zip code) for each year
+# Step 1: Count the number of active hospitals (PGM_TRMNTN_CD == "00") by ZIP_CD for each year
 active_hospitals_by_year = (
     combined_df[combined_df['PGM_TRMNTN_CD'] == "00"]
     .groupby(['ZIP_CD', 'Year'])
@@ -404,7 +392,6 @@ display(f"Number of rows with closure_dummy = 1: {count_of_ones}")
 count_of_zeros = (merged_df['closure_dummy'] == 0).sum()
 display(f"Number of rows with closure_dummy = 0: {count_of_zeros}")
 
-
 ```
 
 
@@ -429,8 +416,6 @@ display(sorted_corrected_closures[['Facility Name', 'ZIP Code', 'Year Closed', '
 1. 
     a. **Five File Types and Their Contents**
 
-Based on the files provided, here is a summary of the five common shapefile-related formats and their typical contents:
-
 1. **`.shp` (Shapefile)**: Stores the geometry of the feature, such as points, lines, or polygons representing geographic boundaries (e.g., ZIP code tabulation areas) (6.4 MB).
 2. **`.shx` (Shape Index)**: Contains an index of the feature geometry, providing quick access to spatial data in the `.shp` file (165 bytes).
 3. **`.dbf` (Database File)**: Stores attribute data associated with each shape, such as names, identifiers, and other relevant information (837.5 MB).
@@ -441,14 +426,16 @@ Based on the files provided, here is a summary of the five common shapefile-rela
 
 The sizes of the files were included above. However, to determine the size of each file after unzipping, use the following command in the terminal of the folder:
 
-
 total 1648944
 -rw-r--r--@ 1 aosilva  staff   6.1M Sep 14  2011 gz_2010_us_860_00_500k.dbf
--rw-r--r--@ 1 aosilva  staff   165B Sep 14  2011 gz_2010_us_860_00_500k.prj
--rw-r--r--@ 1 aosilva  staff   799M Sep 14  2011 gz_2010_us_860_00_500k.shp
--rw-r--r--@ 1 aosilva  staff   259K Sep 14  2011 gz_2010_us_860_00_500k.shx
--rw-rw-rw-@ 1 aosilva  staff    15K Dec  9  2011 gz_2010_us_860_00_500k
 
+-rw-r--r--@ 1 aosilva  staff   165B Sep 14  2011 gz_2010_us_860_00_500k.prj
+
+-rw-r--r--@ 1 aosilva  staff   799M Sep 14  2011 gz_2010_us_860_00_500k.shp
+
+-rw-r--r--@ 1 aosilva  staff   259K Sep 14  2011 gz_2010_us_860_00_500k.shx
+
+-rw-rw-rw-@ 1 aosilva  staff    15K Dec  9  2011 gz_2010_us_860_00_500k
 
 2. 
 
@@ -465,7 +452,7 @@ texas_zip_shapefile = zip_shapefile[zip_shapefile['ZCTA5'].str.startswith(tuple(
 texas_zip_shapefile.head()
 
 # Filter combined_df for 2016 and Texas ZIP codes
-hospitals_2016 = combined_df[(combined_df['Year'] == 2016) & 
+hospitals_2016 = combined_df[(combined_df['Year'] == "2016") & 
                              (combined_df['ZIP_CD'].str.startswith(tuple(map(str, range(750, 799)))))]
 
 # Count hospitals per ZIP code
@@ -486,10 +473,7 @@ ax.set_title('Number of Hospitals by ZIP Code in Texas (2016)')
 ax.axis('off')
 plt.show()
 
-
 ```
-
-
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
@@ -501,7 +485,7 @@ The GeoDataFrame, `zips_all_centroids`, has dimensions that correspond to the nu
 import geopandas as gpd
 
 # Calculate centroids for each ZIP code and create a new GeoDataFrame with these centroids
-zip_shapefile['centroid'] = zip_shapefile.geometry.centroid  # Calculate centroids
+zip_shapefile['centroid'] = zip_shapefile.geometry.centroid  
 
 # Convert this information into a new GeoDataFrame, focusing only on the centroids and ZIP code info
 zips_all_centroids = gpd.GeoDataFrame(zip_shapefile[['ZCTA5', 'centroid']], geometry='centroid')
@@ -524,7 +508,6 @@ zips_all_centroids.head()
 
 # Define ZIP code prefixes for Texas and its neighboring states
 texas_prefixes = list(range(750, 799))
-# Adding neighboring state prefixes
 bordering_prefixes = texas_prefixes + [70, 71, 72, 73, 74, 87, 88]
 
 # Convert prefixes to strings for matching with the 'ZIP Code' column
@@ -557,22 +540,20 @@ We used an inner join to retain only the ZIP codes in Texas and neighboring stat
 
 ```{python}
 
-# Step 1: Filter hospitals active in 2016 and count by ZIP code
+# Step 1: Filter hospitals active in 2016 and count by ZIP 
 
 hospitals_per_zip = combined_df[(combined_df['Year'] == "2016") & (
     combined_df['PGM_TRMNTN_CD'] == "00")].groupby('ZIP_CD').size().reset_index(name='hospital_count')
-
 
 # Filter to keep only ZIP codes with at least one hospital
 zips_with_hospital = hospitals_per_zip[hospitals_per_zip['hospital_count'] > 0]
 
 # Step 2: Merge this count data with zips_texas_borderstates_centroids on ZIP code
-# Ensuring ZIP codes match data types between datasets
 zips_texas_borderstates_centroids['ZIP Code'] = zips_texas_borderstates_centroids['ZIP Code'].astype(
     str)
 zips_with_hospital['ZIP_CD'] = zips_with_hospital['ZIP_CD'].astype(str)
 
-# Perform an inner join to keep only ZIP codes with hospitals in 2016
+# Inner join to keep only ZIP codes with hospitals in 2016
 zips_withhospital_centroids = zips_texas_borderstates_centroids.merge(
     zips_with_hospital, left_on='ZIP Code', right_on='ZIP_CD', how='inner'
 )
@@ -646,23 +627,15 @@ elapsed_time_full = end_time_full - start_time_full
 print("Actual time taken for full dataset:", elapsed_time_full, "seconds")
 
 # Compare to estimated time from previous step
-# Using the previous subset estimate
 estimated_total_time = (elapsed_time / 10) * len(zips_texas_centroids)
 print("Estimated time for entire dataset:", estimated_total_time, "seconds")
 print("Difference between actual and estimated time:", abs(
     elapsed_time_full - estimated_total_time), "seconds")
-print("Difference between actual and estimated time:", abs(elapsed_time_full - estimated_total_time), "seconds")
-
-
 ```
 
     c.
 
-In the `.prj` file , the unit is degrees. This indicates that the geographic data is in a coordinate system based on latitude and longitude, with units in angular degrees rather than linear distance. 
-
-To convert degrees to miles, we can use an approximate conversion. Each degree of latitude corresponds to about 69 miles, a consistent value because latitude lines are parallel. For longitude, the conversion varies depending on latitude due to the Earth’s curvature; at the equator, 1 degree of longitude equals approximately 69 miles, but this distance decreases as you move toward the poles. A common formula to estimate the distance per degree of longitude at a given latitude L  is  69 x cos(L) . 
-
-
+In the `.prj` file , the unit is degrees. This indicates that the geographic data is in a coordinate system based on latitude and longitude, with units in angular degrees rather than linear distance. To convert degrees to miles, we can use an approximate conversion. Each degree of latitude corresponds to about 69 miles, a consistent value because latitude lines are parallel. For longitude, the conversion varies depending on latitude due to the Earth’s curvature; at the equator, 1 degree of longitude equals approximately 69 miles, but this distance decreases as you move toward the poles. A common formula to estimate the distance per degree of longitude at a given latitude L  is  69 x cos(L) . 
 
 ## Effects of closures on access in Texas (15 pts)
 
@@ -680,7 +653,6 @@ texas_closures = corrected_closures[
 closures_by_zipcode = texas_closures.groupby(
     'ZIP Code').size().reset_index(name='Number of Closures')
 
-# Display the result
 closures_by_zipcode
 
 ```
@@ -730,19 +702,17 @@ import matplotlib.pyplot as plt
 # Step 1: Filter for directly affected ZIP codes
 directly_affected_zips = texas_zip_closures[texas_zip_closures['Number of Closures'] > 0]
 
-# Convert Texas ZIP code coordinates to the appropriate projection for distance calculations
-# Project the GeoDataFrame to a projection that uses meters (such as EPSG: 3395 or EPSG: 3857)
+# Convert Texas ZIP code coordinates to the appropriate projection for distance calculations .Project the GeoDataFrame to a projection that uses meters (such as EPSG: 3395 or EPSG: 3857)
 zip_shapefile = zip_shapefile.to_crs(epsg=3395)
 directly_affected_zips = directly_affected_zips.to_crs(epsg=3395)
 
-# Step 2: Create a 10-mile (approximately 16093.4 meters) buffer around each directly affected ZIP code
-directly_affected_zips['buffer'] = directly_affected_zips.geometry.buffer(16093.4)  # 10 miles in meters
+# Step 2: Create a 10-mile (approx. 16093.4 m) buffer around each directly affected ZIP code
+directly_affected_zips['buffer'] = directly_affected_zips.geometry.buffer(16093.4)  
 
 # Step 3: Create a GeoDataFrame containing only the buffers and set it to use the 'buffer' column as geometry
 buffers_gdf = gpd.GeoDataFrame(directly_affected_zips, geometry='buffer')
 
 # Step 4: Spatial join with the overall Texas ZIP code shapefile to find ZIP codes within the 10-mile buffer
-# Note: The spatial join will match any ZIP code whose centroid falls within the buffer area
 indirectly_affected_zips = gpd.sjoin(zip_shapefile, buffers_gdf, how="inner", predicate="intersects")
 
 # Step 5: Count the number of unique indirectly affected ZIP codes
@@ -818,7 +788,6 @@ An average distance of around 15 miles aligns with expectations, especially give
 
 ```{python}
 # Step 4: Map the value for each ZIP code in Texas
-# Convert each ZIP code's distance to miles for mapping
 zips_texas_centroids['nearest_hospital_distance_miles'] = zips_texas_centroids['nearest_hospital_distance'] * 69
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
@@ -830,7 +799,6 @@ plt.show()
 ```
 
 The choropleth map visually represents the distance to the nearest hospital for each ZIP code in Texas. This map highlights the healthcare access disparity between urban and rural regions in Texas. Rural areas, especially in western Texas, may face challenges in timely access to healthcare due to the greater distances to hospitals, which aligns with the calculated average distance. 
-
 
 ## Reflecting on the exercise (10 pts) 
 
