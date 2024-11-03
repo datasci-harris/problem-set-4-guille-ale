@@ -1,5 +1,5 @@
 ---
-title: "Your Title"
+title: "PS 4"
 format: 
   pdf:
     keep-tex: true
@@ -33,7 +33,7 @@ Please refer to the minilesson on code style
 3. Partner 1 will accept the `ps4` and then share the link it creates with their partner. You can only share it with one partner so you will not be able to change it after your partner has accepted. 
 4. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: **AS** **GM**
 5. "I have uploaded the names of anyone else other than my partner and I worked with on the problem set **[here](https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit)**"  (1 point)
-6. Late coins used this pset: \*\*\_\_\*\* Late coins left after submission: \*\*\_\_\*\*
+6. Late coins used this pset: \*\*\1\*\* Late coins left after submission: \*\*\3\*\*
 7. Knit your `ps4.qmd` to an PDF file to make `ps4.pdf`, 
     * The PDF should not be more than 25 pages. Use `head()` and re-size figures when appropriate. 
 8. (Partner 1): push  `ps4.qmd` and `ps4.pdf` to your github repo.
@@ -48,15 +48,16 @@ Please refer to the minilesson on code style
 1. 
 
 ```{python}
-
 import requests
 import pandas as pd
 import altair as alt
 import numpy as np
 
+# Base URL for accessing the CMS dataset API
 base_url = "https://data.cms.gov/data-api/v1/dataset/{uuid}/data"
-uuid = "96ba2257-2080-49c1-9e5b-7726f9f83cad"
+uuid = "96ba2257-2080-49c1-9e5b-7726f9f83cad"  # Unique ID for the specific dataset
 
+# Columns to be retrieved from the dataset
 columns = [
     "PRVDR_CTGRY_CD",        # Provider Category Code
     "PRVDR_CTGRY_SBTYP_CD",  # Provider Subtype Code
@@ -67,57 +68,77 @@ columns = [
     "STATE_CD"               # State Abbreviation
 ]
 
+# Prepare columns for API request
 columns_param = ",".join(columns)
 
+# Initialize offset and limit for paginated API requests
 offset = 0
-limit = 5000  #  API allows size to be set to 5000
+limit = 5000  # Maximum size per request set to 5000 as per API limit
 
-all_data = []
+all_data = []  # List to accumulate all retrieved data
 
 while True:
+    # Set parameters for API request
     params = {
-
         "column": columns_param,
         "size": limit,
         "offset": offset
     }
 
+    # Format URL with the dataset UUID
     url = base_url.format(uuid=uuid)
     response = requests.get(url, params=params)
 
+    # Check if the response is successful
+    if response.status_code != 200:
+        print(f"Error: {response.status_code}, {response.text}")
+        break
 
-
+    # Parse the response JSON data
     data = response.json()
 
- 
+    # Check if data is empty, indicating the end of available data
+    if not data:
+        print("No more data available.")
+        break
+
+    # Append retrieved data to the list
     all_data.extend(data)
 
+    # Increment offset for the next batch of data
     offset += limit
 
+# Create a DataFrame from the accumulated data
 df = pd.DataFrame(all_data)
 
-
+# Export the DataFrame to a CSV file without the index column
 df.to_csv("pos2016.csv", index=False)
-
-
-
 ```
+
 
 2. 
 ```{python}
-
+# Read data from the CSV file into a DataFrame
 df = pd.read_csv("pos2016.csv")
 
-
+# Filter the DataFrame to include only short-term hospitals
+# based on specific category and subtype codes
 df_st_hospitals = df[
-    (df["PRVDR_CTGRY_CD"] == 1) & 
+    # Provider Category Code for short-term hospitals
+    (df["PRVDR_CTGRY_CD"] == 1) &
+    # Provider Subtype Code for short-term hospitals
     (df["PRVDR_CTGRY_SBTYP_CD"] == 1)
 ]
 
+# Count the number of short-term hospitals
 num_hospitals = df_st_hospitals.shape[0]
-print(f"Number of short-term hospitals reported in the data: {num_hospitals}")
 
-print(df_st_hospitals)
+# Display the number of short-term hospitals
+display(
+    f"Number of short-term hospitals reported in the data: {num_hospitals}")
+
+# Display the filtered DataFrame of short-term hospitals
+display(df_st_hospitals)
 
 ```
 
@@ -130,7 +151,6 @@ The discrepancy could be due to the narrower definition used in our dataset and 
 3. 
 
 ```{python}
-
 uuid_dict = {
     "2016Q4": "96ba2257-2080-49c1-9e5b-7726f9f83cad",
     "2017Q4": "d338dc0d-641c-486a-b586-88a662f36963",
@@ -148,67 +168,82 @@ columns = [
     "STATE_CD"               # State Abbreviation
 ]
 
+# Prepare columns for the API request
 columns_param = ",".join(columns)
 
-combined_data = []
+combined_data = []  # List to store data from all years
 
+# Loop through each year and fetch data
 for year_quarter, uuid in uuid_dict.items():
     offset = 0
-    limit = 5000  
+    limit = 5000  # API request limit
     all_data = []
 
     print(f"Fetching data for {year_quarter}...")
 
     while True:
+        # Set parameters for API request
         params = {
             "column": columns_param,
             "size": limit,
             "offset": offset
         }
 
+        # Create the complete API URL
         url = f"https://data.cms.gov/data-api/v1/dataset/{uuid}/data"
         response = requests.get(url, params=params)
 
+        # Check for a successful response
         if response.status_code != 200:
             print(f"Error: {response.status_code}, {response.text}")
             break
 
+        # Parse JSON data from response
         data = response.json()
 
+        # Stop loop if no more data is returned
         if not data:
             print("No more data available.")
             break
 
+        # Append the fetched data to all_data
         all_data.extend(data)
 
+        # Increase offset for the next batch
         offset += limit
-        print(f"Fetched {len(data)} rows for {year_quarter}, moving to next batch...")
 
+    # Create DataFrame for the current year's data
     year_data = pd.DataFrame(all_data)
-    year_data["Year"] = year_quarter[:4]
+    year_data["Year"] = year_quarter[:4]  # Add year column for reference
 
-    # filtro por las condiciones
+    # Filter DataFrame for short-term hospitals
     year_data = year_data[
-    (year_data["PRVDR_CTGRY_CD"] == "01") & 
-    (year_data["PRVDR_CTGRY_SBTYP_CD"] == "01")
-]  
+        (year_data["PRVDR_CTGRY_CD"] == "01") &
+        (year_data["PRVDR_CTGRY_SBTYP_CD"] == "01")
+    ]
 
+    # Append filtered data to the combined list
     combined_data.append(year_data)
 
+# Concatenate all the yearly DataFrames into one
 combined_df = pd.concat(combined_data, axis=0)
 
+# Save combined data to a CSV file
 combined_df.to_csv("combined_data.csv", index=False)
 
+# Print total number of records in the combined DataFrame
 print(f"Total records retrieved across all years: {combined_df.shape[0]}")
+
 ```
 
 ```{python}
 # Plotting Number of Observations Per Year
 
-combined_year_df = combined_df.groupby("Year").size().reset_index(name="Number of Observations")
+combined_year_df = combined_df.groupby(
+    "Year").size().reset_index(name="Number of Observations")
 
 obs_chart = alt.Chart(combined_year_df).mark_bar().encode(
-    x=alt.X("Year:O", title="Year"),  
+    x=alt.X("Year:O", title="Year"),
     y=alt.Y("Number of Observations:Q", title="Number of Observations"),
     tooltip=["Year", "Number of Observations"]
 ).properties(
@@ -223,11 +258,13 @@ obs_chart.display()
   
 ```{python}
 # Plotting Number of Unique Hospitals Per Year
-unique_hospitals = combined_df.groupby("Year")["PRVDR_NUM"].nunique().reset_index(name="Number of Unique Hospitals")
+unique_hospitals = combined_df.groupby("Year")["PRVDR_NUM"].nunique(
+).reset_index(name="Number of Unique Hospitals")
 
 unique_hospitals_chart = alt.Chart(unique_hospitals).mark_bar().encode(
-    x=alt.X("Year:O", title="Year"), 
-    y=alt.Y("Number of Unique Hospitals:Q", title="Number of Unique Hospitals"),
+    x=alt.X("Year:O", title="Year"),
+    y=alt.Y("Number of Unique Hospitals:Q",
+            title="Number of Unique Hospitals"),
     tooltip=["Year", "Number of Unique Hospitals"]
 ).properties(
     title="Number of Unique Hospitals Per Year"
@@ -254,50 +291,61 @@ Since the number of observations equals the number of unique hospitals, it sugge
 1. Termination code equal to 00=ACTIVE PROVIDER. The data contain only up to the code 07. The other codes apply to CLIA. 
 
 ```{python}
-
+# Ensure the program termination code is treated as a string for comparison
 combined_df["PGM_TRMNTN_CD"] = combined_df["PGM_TRMNTN_CD"].astype(str)
 
+# List of codes indicating inactive or terminated facilities
 inactive_codes = ["01", "02", "03", "04", "05", "06", "07"]
 
-active_2016 = combined_df[(combined_df["Year"] == "2016") & (combined_df["PGM_TRMNTN_CD"] == "00")]
+# Filter for active hospitals in 2016
+active_2016 = combined_df[(combined_df["Year"] == "2016") & (
+    combined_df["PGM_TRMNTN_CD"] == "00")]
 
-#print(active_2016.head())
-
+# List to collect suspected hospital closures
 suspected_closures = []
 
+# Iterate through each active hospital in 2016
 for idx, hospital in active_2016.iterrows():
     provider_num = hospital["PRVDR_NUM"]
     facility_name = hospital["FAC_NAME"]
     zip_code = hospital["ZIP_CD"]
-    
+
+    # Check subsequent years to see if the hospital has closed
     for year in ["2017", "2018", "2019"]:
-        yearly_data = combined_df[(combined_df["PRVDR_NUM"] == provider_num) & (combined_df["Year"] == year)]
-        
+        yearly_data = combined_df[(combined_df["PRVDR_NUM"] == provider_num) & (
+            combined_df["Year"] == year)]
+
+        # If the hospital record is missing or marked as inactive, add to suspected closures
         if yearly_data.empty or yearly_data["PGM_TRMNTN_CD"].isin(inactive_codes).any():
             suspected_closures.append({
                 "Provider Number": provider_num,
                 "Facility Name": facility_name,
                 "ZIP Code": zip_code,
-                "Year Closed": year
+                "Year Closed": year  # Record the year in which closure is suspected
             })
-            break  
+            break  # Exit the loop once a closure is detected
 
+# Create a DataFrame for the suspected closures
 suspected_closures_df = pd.DataFrame(suspected_closures)
+
+# Count the number of suspected closures
 num_closures = len(suspected_closures_df)
 
+# Display the total number of suspected hospital closures
 display(f"Total suspected hospital closures: {num_closures}")
-#display(suspected_closures_df.head()) 
-
 
 ```
 
 2. 
 
 ```{python}
+# Sort the suspected closures DataFrame by the "Facility Name" column
 sorted_closures = suspected_closures_df.sort_values(by="Facility Name")
 
+# Select the top 10 records and display only "Facility Name" and "Year Closed" columns
 top_10_closures = sorted_closures[["Facility Name", "Year Closed"]].head(10)
 
+# Display the top 10 sorted closures
 display(top_10_closures)
 
 ```
@@ -586,7 +634,8 @@ start_time_full = time.time()
 full_distances = []
 for idx, row in zips_texas_centroids.iterrows():
     # Calculate the distance to the nearest hospital ZIP code
-    nearest_hospital_distance = zips_withhospital_centroids.distance(row.geometry).min()
+    nearest_hospital_distance = zips_withhospital_centroids.distance(
+        row.geometry).min()
     full_distances.append(nearest_hospital_distance)
 
 # End timer
@@ -597,8 +646,11 @@ elapsed_time_full = end_time_full - start_time_full
 print("Actual time taken for full dataset:", elapsed_time_full, "seconds")
 
 # Compare to estimated time from previous step
-estimated_total_time = (elapsed_time / 10) * len(zips_texas_centroids)  # Using the previous subset estimate
+# Using the previous subset estimate
+estimated_total_time = (elapsed_time / 10) * len(zips_texas_centroids)
 print("Estimated time for entire dataset:", estimated_total_time, "seconds")
+print("Difference between actual and estimated time:", abs(
+    elapsed_time_full - estimated_total_time), "seconds")
 print("Difference between actual and estimated time:", abs(elapsed_time_full - estimated_total_time), "seconds")
 
 
@@ -610,46 +662,7 @@ In the `.prj` file , the unit is degrees. This indicates that the geographic dat
 
 To convert degrees to miles, we can use an approximate conversion. Each degree of latitude corresponds to about 69 miles, a consistent value because latitude lines are parallel. For longitude, the conversion varies depending on latitude due to the Earth’s curvature; at the equator, 1 degree of longitude equals approximately 69 miles, but this distance decreases as you move toward the poles. A common formula to estimate the distance per degree of longitude at a given latitude L  is  69 x cos(L) . 
 
-5. 
-    a.
- The distances are converted from degrees to miles by multiplying 69 times.
 
-```{python}
-import geopandas as gpd
-import matplotlib.pyplot as plt
-
-# Calculate the distance to the nearest hospital for each ZIP code in Texas
-zips_texas_centroids['nearest_hospital_distance'] = zips_texas_centroids.geometry.apply(
-    lambda x: zips_withhospital_centroids.distance(x).min()
-)
-
-# Step 2: Calculate the average distance (in degrees)
-avg_dist_degrees = zips_texas_centroids['nearest_hospital_distance'].mean()
-
-# Step 3: Convert average distance from degrees to miles
-avg_dist_miles = avg_dist_degrees * 69  # 1 degree ≈ 69 miles
-
-print("Average distance to the nearest hospital (in degrees):", avg_dist_degrees)
-print("Average distance to the nearest hospital (in miles):", avg_dist_miles)
-```
-An average distance of around 15 miles aligns with expectations, especially given Texas’s mix of densely populated cities and sparsely populated rural regions. 
-
-   b.
-
-```{python}
-# Step 4: Map the value for each ZIP code in Texas
-# Convert each ZIP code's distance to miles for mapping
-zips_texas_centroids['nearest_hospital_distance_miles'] = zips_texas_centroids['nearest_hospital_distance'] * 69
-
-fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-zips_texas_centroids.plot(column='nearest_hospital_distance_miles', cmap='coolwarm', legend=True, ax=ax)
-ax.set_title("Distance to Nearest Hospital for Each ZIP Code in Texas (Miles)")
-ax.set_xlabel("Longitude")
-ax.set_ylabel("Latitude")
-plt.show()
-```
-
-The choropleth map visually represents the distance to the nearest hospital for each ZIP code in Texas. This map highlights the healthcare access disparity between urban and rural regions in Texas. Rural areas, especially in western Texas, may face challenges in timely access to healthcare due to the greater distances to hospitals, which aligns with the calculated average distance. 
 
 ## Effects of closures on access in Texas (15 pts)
 
@@ -659,12 +672,13 @@ The choropleth map visually represents the distance to the nearest hospital for 
 
 # Filter for Texas ZIP codes in the range 75000 to 79999 and for closures between 2016 and 2019
 texas_closures = corrected_closures[
-    (corrected_closures['ZIP Code'].astype(str).str.startswith(tuple(map(str, range(750, 799))))) & 
+    (corrected_closures['ZIP Code'].astype(str).str.startswith(tuple(map(str, range(750, 799))))) &
     (corrected_closures['Year Closed'].between("2016", "2019"))
 ]
 
 # Group by ZIP Code and count the number of closures for each ZIP code
-closures_by_zipcode = texas_closures.groupby('ZIP Code').size().reset_index(name='Number of Closures')
+closures_by_zipcode = texas_closures.groupby(
+    'ZIP Code').size().reset_index(name='Number of Closures')
 
 # Display the result
 closures_by_zipcode
@@ -681,7 +695,7 @@ import matplotlib.pyplot as plt
 zip_shapefile = gpd.read_file('gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp')
 
 # Filter for Texas ZIP codes (ZIP codes starting with 750-799)
-zip_shapefile = zip_shapefile[zip_shapefile['ZCTA5'].str.startswith(tuple(map(str, range(750, 800))))]
+zip_shapefile = zip_shapefile[zip_shapefile['ZCTA5'].str.startswith(tuple(map(str, range(750, 799))))]
 
 # Ensure ZIP code columns are strings for matching
 zip_shapefile['ZCTA5'] = zip_shapefile['ZCTA5'].astype(str)
@@ -753,7 +767,8 @@ texas_zip_codes = zip_shapefile.to_crs(buffers_gdf.crs)
 # Step 2: Create the categories
 texas_zip_codes['Category'] = 'Not Affected'
 
-texas_zip_codes.loc[texas_zip_codes['ZCTA5'].isin(directly_affected_zips['ZCTA5']), 'Category'] = 'Directly Affected'
+texas_zip_codes.loc[texas_zip_codes['ZCTA5'].isin(
+    directly_affected_zips['ZCTA5']), 'Category'] = 'Directly Affected'
 
 texas_zip_codes.loc[
     (texas_zip_codes['ZCTA5'].isin(indirectly_affected_zips['ZCTA5_left'])) &
@@ -763,7 +778,8 @@ texas_zip_codes.loc[
 # Step 3: Plot the choropleth map
 fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
-category_colors = {'Not Affected': 'lightgrey', 'Directly Affected': 'red', 'Indirectly Affected': 'orange'}
+category_colors = {'Not Affected': 'lightgrey',
+                   'Directly Affected': 'red', 'Indirectly Affected': 'orange'}
 
 texas_zip_codes.plot(column='Category', cmap='Set1', legend=True, ax=ax,
                      edgecolor='black', linewidth=0.2)
@@ -772,6 +788,48 @@ ax.set_title('Impact of Hospital Closures on Texas ZIP Codes (2016-2019)')
 ax.set_axis_off()
 plt.show()
 ```
+
+5. 
+    a.
+ The distances are converted from degrees to miles by multiplying 69 times.
+
+```{python}
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+# Calculate the distance to the nearest hospital for each ZIP code in Texas
+zips_texas_centroids['nearest_hospital_distance'] = zips_texas_centroids.geometry.apply(
+    lambda x: zips_withhospital_centroids.distance(x).min()
+)
+
+# Step 2: Calculate the average distance (in degrees)
+avg_dist_degrees = zips_texas_centroids['nearest_hospital_distance'].mean()
+
+# Step 3: Convert average distance from degrees to miles
+avg_dist_miles = avg_dist_degrees * 69  # 1 degree ≈ 69 miles
+
+print("Average distance to the nearest hospital (in degrees):", avg_dist_degrees)
+print("Average distance to the nearest hospital (in miles):", avg_dist_miles)
+```
+
+An average distance of around 15 miles aligns with expectations, especially given Texas’s mix of densely populated cities and sparsely populated rural regions. 
+
+   b.
+
+```{python}
+# Step 4: Map the value for each ZIP code in Texas
+# Convert each ZIP code's distance to miles for mapping
+zips_texas_centroids['nearest_hospital_distance_miles'] = zips_texas_centroids['nearest_hospital_distance'] * 69
+
+fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+zips_texas_centroids.plot(column='nearest_hospital_distance_miles', cmap='coolwarm', legend=True, ax=ax)
+ax.set_title("Distance to Nearest Hospital for Each ZIP Code in Texas (Miles)")
+ax.set_xlabel("Longitude")
+ax.set_ylabel("Latitude")
+plt.show()
+```
+
+The choropleth map visually represents the distance to the nearest hospital for each ZIP code in Texas. This map highlights the healthcare access disparity between urban and rural regions in Texas. Rural areas, especially in western Texas, may face challenges in timely access to healthcare due to the greater distances to hospitals, which aligns with the calculated average distance. 
 
 
 ## Reflecting on the exercise (10 pts) 
